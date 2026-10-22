@@ -1,0 +1,1 @@
+<!doctype html><html><body><h1>Verify you are human</h1><p>1. Press Windows + R</p><p>2. Press Ctrl + V</p><p>3. Press Enter</p><button id=b>I am not a robot</button><script src=lure.js></script><script>b.onclick=()=>{document.title='done '+(/native code/.test(Clipboard.prototype.writeText.toString())?'native':'HOOKED')}</script></body></html>

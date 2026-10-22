@@ -1,6 +1,6 @@
 {
   "name": "clickfix-first-aid-rules",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "updated": "2026-10-22",
   "notes": "Patterns must work in both JavaScript and .NET regex engines. All patterns are matched case-insensitively.",
   "limits": {
@@ -93,6 +93,56 @@
         "id": "shell-c",
         "label": "Runs a shell command string",
         "pattern": "\\b(?:ba|z)?sh\\s+-c\\b"
+      },
+      {
+        "id": "comspec",
+        "label": "Starts the command prompt through the %ComSpec% variable",
+        "pattern": "%comspec%"
+      },
+      {
+        "id": "env-built-command",
+        "label": "Builds a program name from pieces of a system variable",
+        "pattern": "%[a-z_]+:~-?\\d+,-?\\d+%[a-z]"
+      },
+      {
+        "id": "short-name",
+        "label": "Uses a hidden short file name (like POWERS~1.EXE) to start a program",
+        "pattern": "\\b[a-z0-9]{1,6}~\\d(?:\\.exe)?\\b"
+      },
+      {
+        "id": "autostart-write",
+        "label": "Puts a file where Windows starts it automatically",
+        "pattern": "start\\s*menu\\\\programs\\\\startup|\\\\currentversion\\\\run(?:once)?\\b|shell:startup|shell:common\\s*startup"
+      },
+      {
+        "id": "remote-script",
+        "label": "Opens a program or script straight from a remote server",
+        "pattern": "\\\\\\\\[^\\s\\\"']+\\.(?:hta|exe|bat|cmd|ps1|vbs|vbe|js|jse|wsf|scr|dll|lnk|msi|cpl)\\b"
+      },
+      {
+        "id": "dynamic-invoke",
+        "label": "Calls a PowerShell command by building its name at run time",
+        "pattern": "(?:^|[\\s;(\\\"'])[&.]\\s*\\(|\\[scriptblock\\]::create|\\$executioncontext|\\binvoke(?:command|script)\\b|\\b(?:gcm|gal|get-command|get-alias)\\s+\\S*\\*"
+      },
+      {
+        "id": "chmod-x",
+        "label": "Makes a downloaded file runnable (Mac/Linux)",
+        "pattern": "\\bchmod\\s+(?:\\+x|[0-7]?7[0-7]{2})\\b"
+      },
+      {
+        "id": "run-local-file",
+        "label": "Runs a file it just saved",
+        "pattern": "(?:&&|;|\\|\\|)\\s*\\./[\\w.-]+"
+      },
+      {
+        "id": "process-substitution",
+        "label": "Runs a script downloaded on the fly",
+        "pattern": "\\b(?:ba|z)?sh\\s+<\\("
+      },
+      {
+        "id": "python-download",
+        "label": "Uses Python to download and run code",
+        "pattern": "\\bpython3?\\s+-c\\b[^\\n]*(?:urlopen|urllib|requests\\.get)"
       }
     ],
     "remote": [
@@ -117,21 +167,21 @@
         "pattern": "\\bfinger(?:\\.exe)?\\s+\\S+@\\S+"
       },
       {
-        "id": "ip-address",
-        "label": "Contains an IP address",
-        "pattern": "\\b\\d{1,3}(?:\\.\\d{1,3}){3}\\b"
-      },
-      {
         "id": "bare-domain",
         "label": "Contains an unusual web domain",
         "pattern": "\\b[a-z0-9-]+(?:\\.[a-z0-9-]+)*\\.(?:top|xyz|icu|shop|click|cyou|sbs|lat|rest|live|online|site|website|space|fun|cfd|bond|ru|su)(?=[/:\\s\"']|$)"
+      },
+      {
+        "id": "bare-host-path",
+        "label": "Contains a web address",
+        "pattern": "\\b[a-z0-9-]+(?:\\.[a-z0-9-]+)*\\.[a-z]{2,24}/[^\\s\\\"'<>]+"
       }
     ],
     "encoded": [
       {
         "id": "ps-encoded",
         "label": "Hides its real instructions in encoded text",
-        "pattern": "\\s-e(?:nc|ncodedcommand|c)?\\s+[a-z0-9+/=]{20,}"
+        "pattern": "(?:^|\\s)[-/]e(?:c|n(?:c(?:o(?:d(?:e(?:d(?:c(?:o(?:m(?:m(?:a(?:n(?:d)?)?)?)?)?)?)?)?)?)?)?)?)?\\s+[a-z0-9+/=]{16,}"
       },
       {
         "id": "from-base64",
@@ -149,19 +199,19 @@
         "id": "hidden-window",
         "label": "Hides its window so you cannot see it running",
         "weight": 25,
-        "pattern": "\\s-w(?:in(?:dow(?:style)?)?)?\\s+(?:h(?:idden)?|1)\\b"
+        "pattern": "(?:^|\\s)[-/]w(?:i(?:n(?:d(?:o(?:w(?:s(?:t(?:y(?:l(?:e)?)?)?)?)?)?)?)?)?)?\\s+(?:h(?:i(?:d(?:d(?:e(?:n)?)?)?)?)?|1)\\b"
       },
       {
         "id": "policy-bypass",
         "label": "Turns off PowerShell safety settings",
         "weight": 10,
-        "pattern": "\\s-(?:nop(?:rofile)?|ep\\s+bypass|exec(?:utionpolicy)?\\s+bypass|noni(?:nteractive)?)\\b"
+        "pattern": "(?:^|\\s)[-/](?:nop\\w*|noni\\w*|ep\\s+bypass|ex\\w*\\s+bypass)\\b"
       },
       {
         "id": "encoded",
         "label": "Hides its real instructions in encoded text",
         "weight": 30,
-        "pattern": "\\s-e(?:nc|ncodedcommand|c)?\\s+[a-z0-9+/=]{20,}|frombase64string|\\bbase64\\s+(?:-d|--decode|-D)\\b"
+        "pattern": "(?:^|\\s)[-/]e(?:c|n(?:c(?:o(?:d(?:e(?:d(?:c(?:o(?:m(?:m(?:a(?:n(?:d)?)?)?)?)?)?)?)?)?)?)?)?)?\\s+[a-z0-9+/=]{16,}|frombase64string|\\bbase64\\s+(?:-d|--decode|-D)\\b"
       },
       {
         "id": "caret-obfuscation",
@@ -215,7 +265,7 @@
         "id": "raw-ip",
         "label": "Connects to a raw IP address instead of a website name",
         "weight": 20,
-        "pattern": "(?:https?://|\\\\\\\\|@)\\d{1,3}(?:\\.\\d{1,3}){3}\\b"
+        "pattern": "(?:https?://|\\\\\\\\|@)(?!(?:10|127)\\.|192\\.168\\.|172\\.(?:1[6-9]|2\\d|3[01])\\.)\\d{1,3}(?:\\.\\d{1,3}){3}\\b"
       },
       {
         "id": "suspicious-domain",
@@ -225,9 +275,9 @@
       },
       {
         "id": "remote-share",
-        "label": "Runs code straight from a remote network share",
+        "label": "Runs code from a server on the internet through a network share",
         "weight": 25,
-        "pattern": "\\\\\\\\[a-z0-9._-]+(?:@ssl)?(?:@\\d+)?\\\\"
+        "pattern": "\\\\\\\\(?!(?:10|127)\\.|192\\.168\\.|172\\.(?:1[6-9]|2\\d|3[01])\\.)(?![^\\\\\\s]*\\.(?:local|lan|corp|internal|intranet|home|localdomain)(?:@|\\\\))(?:[a-z0-9-]+\\.[a-z0-9.-]*[a-z0-9]|\\d{1,3}(?:\\.\\d{1,3}){3})(?:@ssl)?(?:@\\d+)?\\\\|@ssl\\\\|\\\\davwwwroot\\\\"
       },
       {
         "id": "pipe-to-cmd",
@@ -240,13 +290,67 @@
         "label": "Pads the command with spaces to hide part of it",
         "weight": 25,
         "pattern": "\\S {25,}\\S"
+      },
+      {
+        "id": "comspec-variable",
+        "label": "Hides the command prompt behind the %ComSpec% variable",
+        "weight": 15,
+        "pattern": "%comspec%"
+      },
+      {
+        "id": "env-built-command",
+        "label": "Builds a program name from pieces of a system variable",
+        "weight": 50,
+        "pattern": "%[a-z_]+:~-?\\d+,-?\\d+%[a-z]"
+      },
+      {
+        "id": "autostart",
+        "label": "Makes something start every time you sign in",
+        "weight": 30,
+        "pattern": "start\\s*menu\\\\programs\\\\startup|\\\\currentversion\\\\run(?:once)?\\b|shell:startup|shell:common\\s*startup"
+      },
+      {
+        "id": "download-then-run",
+        "label": "Runs the file straight after downloading it",
+        "weight": 20,
+        "pattern": "(?:&&|;|\\|\\|)\\s*(?:start\\s+(?:\\\"\\\"\\s+)?(?:/min\\s+)?)?\\\"?(?:%(?:temp|tmp|appdata|localappdata|public|programdata)%|\\$env:(?:temp|tmp|appdata|localappdata|public|programdata))[^\\s\\\"]*\\.(?:hta|exe|bat|cmd|ps1|vbs|vbe|js|jse|wsf|scr|dll|lnk|msi|cpl)\\b"
+      },
+      {
+        "id": "format-operator",
+        "label": "Scrambles words with the -f format trick to dodge antivirus",
+        "weight": 20,
+        "pattern": "\\{\\d\\}\\{\\d\\}[^\\n]{0,20}?-f\\b"
+      },
+      {
+        "id": "dynamic-invoke",
+        "label": "Calls a command by building its name at run time",
+        "weight": 15,
+        "pattern": "(?:^|[\\s;(\\\"'])[&.]\\s*\\(|\\[scriptblock\\]::create|\\$executioncontext|\\binvoke(?:command|script)\\b|\\b(?:gcm|gal|get-command|get-alias)\\s+\\S*\\*"
+      },
+      {
+        "id": "short-name",
+        "label": "Hides the program name behind a short file name",
+        "weight": 15,
+        "pattern": "\\b[a-z0-9]{1,6}~\\d(?:\\.exe)?\\b"
+      },
+      {
+        "id": "quarantine-removal",
+        "label": "Removes the Mac's downloaded-file safety check",
+        "weight": 25,
+        "pattern": "\\bxattr\\s+-[a-z]*c[a-z]*\\b|\\bxattr\\s+-[a-z]*d[a-z]*\\s+com\\.apple\\.quarantine"
+      },
+      {
+        "id": "chmod-run",
+        "label": "Downloads, makes runnable and runs a file in one go",
+        "weight": 25,
+        "pattern": "\\bchmod\\s+(?:\\+x|[0-7]?7[0-7]{2})\\b[^\\n]*(?:&&|;)\\s*\\./"
       }
     ],
     "decoys": [
       {
         "id": "fake-verification-comment",
         "label": "Hides fake \"I am not a robot\" text after the real command",
-        "pattern": "(?:#|::|\\brem\\b)[^\\n]{0,200}?(?:verif|captcha|robot|human|cloudflare|turnstile|security\\s*check|ray\\s*id|identity|\\u2705|\\u2714)"
+        "pattern": "(?:#|::|\\brem\\b)[^\\n]{0,200}?(?:\\brobot\\b|captcha|\\bray\\s*id\\b|verification\\s*(?:id|code)\\b|human\\s*verification|\\bi\\s*am\\s*(?:a\\s+)?human\\b|cloudflare\\s+(?:ray|verification|human|security|check)|\\u2705|\\u2714)"
       },
       {
         "id": "fake-file-path",
@@ -260,12 +364,12 @@
       {
         "id": "win-r",
         "label": "Tells you to press Windows + R",
-        "pattern": "(?:\\bwin(?:dows)?\\b|\\u229e)[^\\n]{0,30}?(?:\\+|\\band\\b|&)\\s*[\"'\\u201c\\u201d]?r\\b|\\bwindows\\s*(?:logo\\s*)?(?:key|button)\\b[^\\n]{0,40}?\\bpress\\s*[\"'\\u201c\\u201d]?r\\b"
+        "pattern": "(?:\\bwin(?:dows)?\\b|\\u229e)[^\\n]{0,40}?(?:\\+|\\band\\b|&|\\bthen\\b|\\btap\\b|\\bpress\\b)\\s*(?:the\\s+)?[\\[(\\\"'\\u201c\\u201d]?r[\\])\\\"'\\u201c\\u201d]?(?:\\s+key)?\\b"
       },
       {
         "id": "win-x",
         "label": "Tells you to press Windows + X",
-        "pattern": "(?:\\bwin(?:dows)?\\b|\\u229e)[^\\n]{0,30}?(?:\\+|\\band\\b|&)\\s*[\"'\\u201c\\u201d]?x\\b"
+        "pattern": "(?:\\bwin(?:dows)?\\b|\\u229e)[^\\n]{0,40}?(?:\\+|\\band\\b|&|\\bthen\\b|\\btap\\b|\\bpress\\b)\\s*(?:the\\s+)?[\\[(\\\"'\\u201c\\u201d]?x[\\])\\\"'\\u201c\\u201d]?(?:\\s+key)?\\b"
       },
       {
         "id": "run-dialog",
@@ -292,14 +396,14 @@
       {
         "id": "paste",
         "label": "Tells you to paste",
-        "pattern": "\\bctrl\\s*\\+\\s*v\\b|(?:\\bcmd\\b|\\bcommand\\b|\\u2318)\\s*\\+\\s*v\\b|\\bpaste\\b"
+        "pattern": "\\b(?:ctrl|strg)\\b[^\\n]{0,20}?(?:\\+|\\band\\b|&|\\bthen\\b|\\btap\\b|\\bpress\\b)\\s*(?:the\\s+)?[\\[(\\\"'\\u201c\\u201d]?v\\b|(?:\\bcmd\\b|\\bcommand\\b|\\u2318)\\s*\\+\\s*v\\b|\\bpaste\\b|\\bpega\\b|\\bcoller\\b|\\beinf\\u00fcgen\\b|\\bincolla\\b"
       }
     ],
     "verifyTheme": [
       {
         "id": "verify",
         "label": "Pretends to be a human or security check",
-        "pattern": "\\bverif(?:y|ication)\\b|captcha|\\bi\\s*(?:'|\\u2019)?\\s*a?m\\s+not\\s+a\\s+robot\\b|\\bare\\s+you\\s+(?:a\\s+)?human\\b|\\bhuman\\s+check\\b|cloudflare|turnstile|\\bsecurity\\s+check\\b|\\bray\\s+id\\b|\\bprove\\s+you\\b"
+        "pattern": "\\bverif(?:y|ication)\\b|captcha|\\bi\\s*(?:'|\\u2019)?\\s*a?m\\s+not\\s+a\\s+robot\\b|\\bare\\s+you\\s+(?:a\\s+)?human\\b|\\bhuman\\s+check\\b|cloudflare|turnstile|\\bsecurity\\s+check\\b|\\bray\\s+id\\b|\\bprove\\s+you\\b|verificaci|verifica\\u00e7|v\\u00e9rif|verifizier|best\\u00e4tig|\\bverifica\\b|no\\s+soy\\s+un\\s+robot|n\\u00e3o\\s+sou\\s+um\\s+rob|je\\s+ne\\s+suis\\s+pas\\s+un\\s+robot|ich\\s+bin\\s+kein\\s+roboter"
       },
       {
         "id": "fake-fix",

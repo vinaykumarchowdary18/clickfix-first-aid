@@ -2,12 +2,13 @@
  * ClickFix First Aid: content script (extension's isolated world).
  *
  * Jobs:
- *  1. Listen for reports from the clipboard guard (page-hook.js). Re-check the
- *     text here, where the page cannot interfere, then ask the background to
- *     record it and show the warning in the top frame of the tab.
- *  2. Watch the page text for ClickFix trap instructions ("Win+R, Ctrl+V,
- *     Enter") and show a banner even before anything is copied.
- *  3. Draw warnings when the background tells the top frame to.
+ *  1. Pick up the private channel created by the clipboard guard (page-hook.js),
+ *     tell the guard the current settings, and receive its reports.
+ *  2. Pass reports to the background, which records them and asks the top frame
+ *     of the tab to show the right warning.
+ *  3. Watch the page text, including closed shadow roots, for ClickFix trap
+ *     instructions ("Win+R, Ctrl+V, Enter") in every frame.
+ *  4. In the top frame: draw warnings and do "Copy anyway" when asked.
  */
 (function () {
   'use strict';
@@ -15,18 +16,19 @@
   var isTop = window.top === window;
   var detector = CFADetector.createDetector(CFA_RULES);
   var defang = CFADetector.defang;
-  var settings = { softWarnings: true, mutedSites: [] };
-  var host = location.hostname || '';
+  var topHost = computeTopHost();
+  var settings = { holdInstallers: true, allowSites: [] };
+  var channel = null;
 
-  try {
-    chrome.storage.local.get(['settings'], function (res) {
-      if (res && res.settings) {
-        settings.softWarnings = res.settings.softWarnings !== false;
-        settings.mutedSites = Array.isArray(res.settings.mutedSites) ? res.settings.mutedSites : [];
-      }
-    });
-  } catch (e) {
-    /* ignore */
+  function computeTopHost() {
+    if (isTop) return location.hostname || '';
+    try {
+      var ao = location.ancestorOrigins;
+      if (ao && ao.length) return new URL(ao[ao.length - 1]).hostname;
+    } catch (e) {
+      /* ignore */
+    }
+    return location.hostname || '';
   }
 
   function send(msg) {
@@ -37,129 +39,221 @@
     }
   }
 
-  function pageText() {
+  // ---- 1. The private channel. ----------------------------------------------
+  function sendConfig() {
+    if (!channel) return;
+    var allowed = settings.allowSites.indexOf(topHost) !== -1;
+    channel.dispatchEvent(new CustomEvent('cfa-config', {
+      detail: 'hold=' + (settings.holdInstallers ? 1 : 0) + ';allow=' + (allowed ? 1 : 0)
+    }));
+  }
+
+  function tryBind() {
+    var host = document.getElementsByTagName('clickfix-first-aid-channel')[0];
+    if (!host) return false;
     try {
-      return document.body ? document.body.innerText || '' : '';
+      var root = chrome.dom.openOrClosedShadowRoot(host);
+      var node = root && root.firstChild;
+      if (!node) return false;
+      channel = node;
+      node.addEventListener('cfa-report', onReport);
+      host.remove(); // the page never gets to see it
+      sendConfig();
+      return true;
     } catch (e) {
-      return '';
+      return false;
     }
   }
 
-  // Same logic as the clipboard guard: visible text first, then hidden text.
-  function analyzeThisPage() {
-    var page = detector.analyzePage(pageText());
-    if (!page.weak) {
-      var hidden = '';
-      try {
-        hidden = document.body ? document.body.textContent || '' : '';
-      } catch (e) {
-        hidden = '';
+  if (!tryBind()) {
+    // The guard may run a moment after us. Wait for its element.
+    var mo = new MutationObserver(function () {
+      if (tryBind()) mo.disconnect();
+    });
+    mo.observe(document, { childList: true, subtree: true });
+    document.addEventListener('DOMContentLoaded', function () { mo.disconnect(); }, { once: true });
+  }
+
+  function applySettings(s) {
+    s = s || {};
+    settings.holdInstallers = s.holdInstallers !== false;
+    settings.allowSites = Array.isArray(s.allowSites) ? s.allowSites : [];
+    sendConfig();
+  }
+
+  try {
+    chrome.storage.local.get(['settings'], function (res) { applySettings(res && res.settings); });
+    chrome.storage.onChanged.addListener(function (changes, area) {
+      if (area === 'local' && changes.settings) applySettings(changes.settings.newValue);
+    });
+  } catch (e) {
+    /* ignore */
+  }
+
+  // ---- Reading the page (here the page cannot interfere). -------------------
+  var SKIP = { SCRIPT: 1, STYLE: 1, NOSCRIPT: 1, TEXTAREA: 1, TEMPLATE: 1 };
+
+  function textOf(root, limit) {
+    var out = '';
+    try {
+      var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+      var n;
+      while ((n = w.nextNode()) && out.length < limit) {
+        var p = n.parentNode;
+        if (p && SKIP[p.nodeName] === 1) continue;
+        out += n.nodeValue + '\n';
       }
-      var p2 = detector.analyzePage(hidden);
-      if (p2.weak) page = p2;
+    } catch (e) {
+      /* partial text is fine */
     }
-    return page;
+    return out;
   }
 
-  // 1. Reports from the clipboard guard.
-  var lastEventAt = 0;
-  document.addEventListener('clickfix-first-aid', function (ev) {
-    var now = Date.now();
-    if (now - lastEventAt < 800) return; // ignore floods
-    lastEventAt = now;
-    var data;
+  // Text inside shadow roots, including closed ones the page tried to hide.
+  function shadowText(limit) {
+    var out = '';
     try {
-      data = JSON.parse(String(ev.detail));
+      var all = document.querySelectorAll('*');
+      for (var i = 0; i < all.length && i < 5000 && out.length < limit; i++) {
+        if (all[i].localName === 'clickfix-first-aid-ui') continue; // our own warnings
+        var root = chrome.dom.openOrClosedShadowRoot(all[i]);
+        if (root) out += textOf(root, limit - out.length);
+      }
     } catch (e) {
-      return;
+      /* ignore */
     }
-    if (!data || typeof data.text !== 'string') return;
-    var text = data.text.slice(0, 20000);
+    return out;
+  }
+
+  // Text added with CSS, like #steps::before { content: "Press Win+R" }.
+  function pseudoText(limit) {
+    var out = '';
+    try {
+      var all = document.querySelectorAll('body *');
+      for (var i = 0; i < all.length && i < 1500 && out.length < limit; i++) {
+        var pair = ['::before', '::after'];
+        for (var j = 0; j < 2; j++) {
+          var c = getComputedStyle(all[i], pair[j]).content;
+          if (c && c !== 'none' && c !== 'normal') out += c.replace(/^["']|["']$/g, '') + '\n';
+        }
+      }
+    } catch (e) {
+      /* ignore */
+    }
+    return out;
+  }
+
+  function visibleText(deep) {
+    var t = '';
+    try {
+      t = document.body ? document.body.innerText || '' : '';
+    } catch (e) {
+      t = '';
+    }
+    t += '\n' + shadowText(100000);
+    if (deep) t += '\n' + pseudoText(20000);
+    return t;
+  }
+
+  // Same rule as the guard: only visible text can make a page "strong".
+  function analyzeThisPage() {
+    var v = detector.analyzePage(visibleText(false));
+    if (v.strong || v.weak) return v;
+    var h = detector.analyzePage(document.body ? textOf(document.body, 200000) : '');
+    return { weak: h.weak, strong: false, runShortcut: h.runShortcut, paste: h.paste, verifyTheme: h.verifyTheme };
+  }
+
+  // ---- 2. Reports from the guard. --------------------------------------------
+  var lastAt = { block: 0, hold: 0, note: 0 };
+  var FALLBACK = {
+    block: 'It matches a known ClickFix attack pattern',
+    hold: 'It downloads and runs a program',
+    note: 'It downloads and runs a program'
+  };
+
+  function onReport(ev) {
+    var parts = String(ev.detail).split('\u001f');
+    var verdict = parts[0];
+    if (!(verdict in lastAt)) return;
+    var now = Date.now();
+    if (now - lastAt[verdict] < 500) return;
+    lastAt[verdict] = now;
+    var how = (parts[1] || '').slice(0, 40);
+    var text = parts.slice(2).join('\u001f').slice(0, 20000);
     var r = detector.decide(detector.analyzeCommand(text), analyzeThisPage(), { subframe: !isTop });
-    if (r.verdict === 'allow') return;
+    var reasons = r.reasons.length ? r.reasons.slice(0, 8) : [FALLBACK[verdict]];
     send({
       type: 'cfa-event',
       data: {
-        verdict: r.verdict,
+        verdict: verdict,
         rule: r.rule || '',
-        reasons: r.reasons.slice(0, 8),
+        reasons: reasons,
         preview: defang(text, 600),
-        how: typeof data.how === 'string' ? data.how.slice(0, 40) : '',
-        host: host
-      }
-    });
-  });
-
-  // 3. Show warnings (top frame only).
-  if (isTop) {
-    chrome.runtime.onMessage.addListener(function (msg) {
-      if (!msg || msg.type !== 'cfa-show' || !msg.data) return;
-      var d = msg.data;
-      if (d.verdict === 'block') {
-        self.CFAUI.showBlocked(d);
-      } else if (d.verdict === 'warn') {
-        if (!settings.softWarnings) return;
-        if (settings.mutedSites.indexOf(host) !== -1) return;
-        self.CFAUI.showToast(d, function () {
-          settings.mutedSites.push(host);
-          try {
-            chrome.storage.local.set({ settings: settings });
-          } catch (e) {
-            /* ignore */
-          }
-        });
+        how: how,
+        host: topHost,
+        original: verdict === 'block' ? '' : text
       }
     });
   }
 
-  // 2. Trap-page detection (top frame only).
-  if (isTop && /^https?:$/.test(location.protocol)) {
+  // ---- 3. Trap-page detection, in every frame. ------------------------------
+  if (/^https?:$/.test(location.protocol) || (!isTop && location.protocol === 'about:')) {
     var scans = 0;
     var timer = null;
     var flagged = false;
     var observer = null;
+    var deepUntil = 0;
 
     var scan = function () {
       timer = null;
-      if (flagged || scans >= 60) {
+      if (flagged) return;
+      var deep = Date.now() < deepUntil;
+      if (scans >= 60 && !deep) {
         if (observer) observer.disconnect();
         return;
       }
       scans++;
-      var page = detector.analyzePage(pageText());
+      var page = detector.analyzePage(visibleText(deep));
       if (page.strong) {
         flagged = true;
         if (observer) observer.disconnect();
         var reasons = [];
-        var groups = [page.runShortcut, page.paste, page.verifyTheme];
-        for (var g = 0; g < groups.length; g++) {
-          for (var i = 0; i < groups[g].length; i++) reasons.push(groups[g][i].label);
-        }
-        send({ type: 'cfa-lure', data: { host: host, reasons: reasons.slice(0, 6) } });
-        self.CFAUI.showLureBanner();
+        [page.runShortcut, page.paste, page.verifyTheme].forEach(function (g) {
+          g.forEach(function (x) { reasons.push(x.label); });
+        });
+        send({ type: 'cfa-lure', data: { host: topHost, reasons: reasons.slice(0, 6) } });
       }
     };
 
     var schedule = function () {
-      if (!timer && !flagged) timer = setTimeout(scan, 700);
+      if (!timer && !flagged) timer = setTimeout(scan, 600);
     };
 
     var start = function () {
       schedule();
       try {
+        // Trap pages often reveal their steps by un-hiding an element, so watch
+        // style/class/hidden changes too, not just new text.
         observer = new MutationObserver(schedule);
-        // Trap pages often reveal their "Win+R, Ctrl+V" steps by un-hiding an
-        // element, so watch style/class/hidden changes too, not just new text.
         observer.observe(document.documentElement, {
-          childList: true,
-          subtree: true,
-          characterData: true,
-          attributes: true,
-          attributeFilter: ['style', 'class', 'hidden']
+          childList: true, subtree: true, characterData: true,
+          attributes: true, attributeFilter: ['style', 'class', 'hidden']
         });
       } catch (e) {
         /* ignore */
       }
+    };
+
+    // After a copy was paused, look harder for 15 seconds (CSS text included),
+    // because some traps only show their instructions after the copy.
+    self.CFAStartDeepScan = function () {
+      deepUntil = Date.now() + 15000;
+      var tick = function () {
+        if (flagged || Date.now() > deepUntil) return;
+        scan();
+        setTimeout(tick, 1000);
+      };
+      tick();
     };
 
     if (document.readyState === 'loading') {
@@ -168,4 +262,62 @@
       start();
     }
   }
+
+  // ---- 4. Copy anyway (top frame). ---------------------------------------------
+  // Our isolated world has its own, untouched copies of the clipboard functions.
+  function copyText(t) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(t).catch(function () { return copyWithEvent(t); });
+    }
+    return copyWithEvent(t);
+  }
+
+  function copyWithEvent(t) {
+    return new Promise(function (resolve, reject) {
+      var handler = function (e) {
+        e.clipboardData.setData('text/plain', t);
+        e.preventDefault();
+        e.stopImmediatePropagation(); // the person approved this copy
+      };
+      document.addEventListener('copy', handler, { capture: true, once: true });
+      var ok = false;
+      try {
+        ok = document.execCommand('copy');
+      } catch (e) {
+        ok = false;
+      }
+      document.removeEventListener('copy', handler, { capture: true });
+      if (ok) resolve();
+      else reject(new Error('copy failed'));
+    });
+  }
+
+  chrome.runtime.onMessage.addListener(function (msg) {
+    if (!msg) return;
+    if (msg.type === 'cfa-deep-scan') {
+      if (self.CFAStartDeepScan) self.CFAStartDeepScan();
+      return;
+    }
+    if (!isTop) return;
+    if (msg.type === 'cfa-show-lure') {
+      self.CFAUI.showLureBanner();
+      return;
+    }
+    if (msg.type !== 'cfa-show' || !msg.data) return;
+    var d = msg.data;
+    if (d.verdict === 'block') {
+      self.CFAUI.showBlocked(d);
+    } else if (d.verdict === 'hold') {
+      var original = String(d.original || '');
+      self.CFAUI.showHeld(d, {
+        copyAnyway: function () { return copyText(original); },
+        allowSite: function () {
+          send({ type: 'cfa-allow-site', host: d.host || topHost });
+          return copyText(original);
+        }
+      });
+    } else if (d.verdict === 'note') {
+      self.CFAUI.showNote(d);
+    }
+  });
 })();

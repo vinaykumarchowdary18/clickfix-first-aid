@@ -16,13 +16,21 @@ function timeAgo(t) {
   return Math.round(h / 24) + ' days ago';
 }
 
-var KIND_LABEL = { block: 'Blocked', warn: 'Warned', lure: 'Trap page' };
+var KIND_LABEL = { block: 'Blocked', hold: 'Paused', note: 'Noted', lure: 'Trap page' };
+
+function updateSettings(change) {
+  chrome.storage.local.get(['settings'], function (res) {
+    var s = Object.assign({ holdInstallers: true, allowSites: [] }, res.settings || {});
+    change(s);
+    chrome.storage.local.set({ settings: s }, render);
+  });
+}
 
 function render() {
   chrome.storage.local.get(['stats', 'recent', 'settings'], function (res) {
-    var stats = res.stats || { blocked: 0, warned: 0, lurePages: 0 };
+    var stats = res.stats || {};
     $('blocked').textContent = stats.blocked || 0;
-    $('warned').textContent = stats.warned || 0;
+    $('held').textContent = stats.held || 0;
     $('lures').textContent = stats.lurePages || 0;
 
     var list = $('recent');
@@ -44,7 +52,24 @@ function render() {
     }
 
     var s = res.settings || {};
-    $('soft').checked = s.softWarnings !== false;
+    $('hold').checked = s.holdInstallers !== false;
+    var sites = Array.isArray(s.allowSites) ? s.allowSites : [];
+    $('allowed-wrap').hidden = sites.length === 0;
+    var ul = $('allowed');
+    ul.textContent = '';
+    sites.forEach(function (host) {
+      var li = document.createElement('li');
+      li.textContent = host + ' ';
+      var rm = document.createElement('button');
+      rm.className = 'quiet';
+      rm.type = 'button';
+      rm.textContent = 'Remove';
+      rm.addEventListener('click', function () {
+        updateSettings(function (st) { st.allowSites = st.allowSites.filter(function (h) { return h !== host; }); });
+      });
+      li.appendChild(rm);
+      ul.appendChild(li);
+    });
   });
 }
 
@@ -52,16 +77,13 @@ $('guide').addEventListener('click', function () {
   chrome.tabs.create({ url: chrome.runtime.getURL('pages/recovery.html') });
 });
 
-$('soft').addEventListener('change', function (e) {
-  chrome.storage.local.get(['settings'], function (res) {
-    var s = res.settings || {};
-    s.softWarnings = e.target.checked;
-    chrome.storage.local.set({ settings: s });
-  });
+$('hold').addEventListener('change', function (e) {
+  var on = e.target.checked;
+  updateSettings(function (s) { s.holdInstallers = on; });
 });
 
 $('clear').addEventListener('click', function () {
-  chrome.storage.local.set({ stats: { blocked: 0, warned: 0, lurePages: 0 }, recent: [] }, render);
+  chrome.storage.local.set({ stats: { blocked: 0, held: 0, lurePages: 0 }, recent: [] }, render);
 });
 
 if (cfg.homepage) {

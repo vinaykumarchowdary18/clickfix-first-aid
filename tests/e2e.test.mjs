@@ -2,7 +2,7 @@
 // fake ClickFix pages (tests/fixtures/pages). Run with: npm run test:e2e
 //
 // Needs the "playwright" package and a Chromium build. Set CHROMIUM_PATH to use
-// a specific browser binary.
+// a specific browser binary, and CFA_EXTENSION_DIR to test an unzipped release.
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
@@ -17,14 +17,18 @@ const { chromium } = require('playwright');
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PAGES = join(ROOT, 'tests/fixtures/pages');
-const EXT = process.env.CFA_EXTENSION_DIR || join(ROOT, 'extension'); // set to test an unzipped release
-const SAFE_PREFIX = '# STOP. ClickFix First Aid blocked this.';
-const TRAP = 'cmd /c echo ClickFix First Aid test, this is harmless # I am not a robot - reCAPTCHA Verification ID: 1234';
+const EXT = process.env.CFA_EXTENSION_DIR || join(ROOT, 'extension');
+const SAFE = '# STOP. ClickFix First Aid blocked this.';
+const HELD = '# PAUSED. ClickFix First Aid held this';
+const INSTALLER = 'irm https://get.scoop.sh | iex';
 
 let server;
 let base;
+let port;
 let context;
 let userDataDir;
+
+const TYPES = { '.js': 'text/javascript', '.css': 'text/css', '.html': 'text/html; charset=utf-8' };
 
 before(async () => {
   server = createServer(async (req, res) => {
@@ -32,16 +36,18 @@ before(async () => {
       const name = decodeURIComponent(new URL(req.url, 'http://x').pathname).replace(/^\/+/, '') || 'index.html';
       if (name.includes('..')) throw new Error('bad path');
       // /docs/... serves the published site (for the safe demo), everything else the test pages.
-      const body = name.startsWith('docs/') ? await readFile(join(ROOT, name)) : await readFile(join(PAGES, name));
-      res.writeHead(200, { 'content-type': extname(name) === '.js' ? 'text/javascript' : 'text/html; charset=utf-8' });
+      let body = name.startsWith('docs/') ? await readFile(join(ROOT, name)) : await readFile(join(PAGES, name));
+      if (name.startsWith('review/')) body = Buffer.from(body.toString('utf8').replaceAll('PORT', String(port)).replaceAll(`localhost:${port}/`, `localhost:${port}/review/`));
+      res.writeHead(200, { 'content-type': TYPES[extname(name)] || 'text/html; charset=utf-8' });
       res.end(body);
     } catch (e) {
       res.writeHead(404);
       res.end('not found');
     }
   });
-  await new Promise((r) => server.listen(0, '127.0.0.1', r));
-  base = `http://127.0.0.1:${server.address().port}`;
+  await new Promise((r) => server.listen(0, r)); // all interfaces: 127.0.0.1 and localhost are different origins
+  port = server.address().port;
+  base = `http://127.0.0.1:${port}`;
 
   userDataDir = await mkdtemp(join(tmpdir(), 'cfa-e2e-'));
   context = await chromium.launchPersistentContext(userDataDir, {
@@ -49,8 +55,9 @@ before(async () => {
     executablePath: process.env.CHROMIUM_PATH || undefined,
     args: ['--headless=new', `--disable-extensions-except=${EXT}`, `--load-extension=${EXT}`, '--no-sandbox']
   });
-  await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: base });
-  // Wait for the extension's background worker to start.
+  for (const origin of [base, `http://localhost:${port}`]) {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin });
+  }
   if (!context.serviceWorkers().length) await context.waitForEvent('serviceworker', { timeout: 10000 });
 });
 
@@ -67,36 +74,23 @@ async function open(name) {
   return page;
 }
 
-async function clipboard(page) {
-  return page.evaluate(() => navigator.clipboard.readText());
-}
+const clipboard = (page) => page.evaluate(() => navigator.clipboard.readText());
+const setClipboard = (page, text) => page.evaluate((t) => navigator.clipboard.writeText(t), text);
+const uiState = (page) => page.evaluate(() => {
+  const el = document.querySelector('clickfix-first-aid-ui:not([data-state="lure"])') || document.querySelector('clickfix-first-aid-ui');
+  return el ? el.getAttribute('data-state') : null;
+});
+const waitUi = (page, state, timeout = 6000) =>
+  page.waitForFunction((s) => !!document.querySelector(`clickfix-first-aid-ui[data-state="${s}"]`), state, { timeout });
 
-async function setClipboard(page, text) {
-  await page.evaluate((t) => navigator.clipboard.writeText(t), text);
-}
-
-async function uiState(page) {
-  return page.evaluate(() => {
-    const el = document.querySelector('clickfix-first-aid-ui');
-    return el ? el.getAttribute('data-state') : null;
-  });
-}
-
-for (const [name, selector] of [
-  ['writetext.html', '#robot'],
-  ['execcommand.html', '#robot'],
-  ['copyevent.html', '#robot'],
-  ['clipboarditem.html', '#robot']
-]) {
+// ---- The classic traps: the command must never reach the clipboard. ----------
+for (const name of ['writetext.html', 'execcommand.html', 'copyevent.html', 'clipboarditem.html']) {
   test(`blocks the trap on ${name}`, async () => {
     const page = await open(name);
     await setClipboard(page, 'before');
-    await page.click(selector);
-    await page.waitForFunction(() => document.title !== document.title.replace('copied', '') || document.title.startsWith('error'), null, { timeout: 5000 }).catch(() => {});
-    await page.waitForFunction(() => !!document.querySelector('clickfix-first-aid-ui[data-state="blocked"]'), null, { timeout: 5000 });
-    const clip = await clipboard(page);
-    assert.ok(clip.startsWith(SAFE_PREFIX), `clipboard should hold the safe message, got: ${clip}`);
-    assert.notEqual(clip, TRAP);
+    await page.click('#robot');
+    await waitUi(page, 'blocked');
+    assert.ok((await clipboard(page)).startsWith(SAFE));
     await page.close();
   });
 }
@@ -104,38 +98,91 @@ for (const [name, selector] of [
 test('blocks a trap inside an iframe and warns in the top page', async () => {
   const page = await open('iframe-top.html');
   await setClipboard(page, 'before');
-  const frame = page.frameLocator('#captcha');
-  await frame.locator('#robot').click();
-  await page.waitForFunction(() => !!document.querySelector('clickfix-first-aid-ui[data-state="blocked"]'), null, { timeout: 5000 });
-  const clip = await clipboard(page);
-  assert.ok(clip.startsWith(SAFE_PREFIX), `clipboard should hold the safe message, got: ${clip}`);
+  await page.frameLocator('#captcha').locator('#robot').click();
+  await waitUi(page, 'blocked');
+  assert.ok((await clipboard(page)).startsWith(SAFE));
   await page.close();
 });
 
-test('a plain command from a hidden frame is blocked when the outer page is a trap', async () => {
+test('a plain command from a frame on a trap page: paused, then full warning', async () => {
   const page = await open('iframe-plain-top.html');
+  await page.waitForTimeout(1200); // let the page be recognized as a trap
   await setClipboard(page, 'before');
   await page.frameLocator('#captcha').locator('#robot').click();
-  await page.waitForFunction(() => !!document.querySelector('clickfix-first-aid-ui[data-state="blocked"]'), null, { timeout: 5000 });
-  assert.ok((await clipboard(page)).startsWith(SAFE_PREFIX));
+  await waitUi(page, 'blocked');
+  assert.ok((await clipboard(page)).startsWith(HELD));
   await page.close();
 });
 
-test('a plain command copied before the trap steps are revealed is blocked', async () => {
+test('a command copied before the trap steps appear: paused, then full warning', async () => {
   const page = await open('copy-before-steps.html');
   await setClipboard(page, 'before');
   await page.click('#robot');
-  await page.waitForFunction(() => !!document.querySelector('clickfix-first-aid-ui[data-state="blocked"]'), null, { timeout: 5000 });
-  assert.ok((await clipboard(page)).startsWith(SAFE_PREFIX));
+  await waitUi(page, 'blocked');
+  assert.ok((await clipboard(page)).startsWith(HELD));
   await page.close();
 });
 
-test('developer installer copy is allowed, with a gentle note', async () => {
+test('a page swapping in a command when you copy by hand is blocked', async () => {
+  const page = await open('pastejack.html');
+  await setClipboard(page, 'before');
+  await page.evaluate(() => {
+    const r = document.createRange();
+    r.selectNodeContents(document.getElementById('order'));
+    getSelection().removeAllRanges();
+    getSelection().addRange(r);
+  });
+  await page.keyboard.press('Control+C');
+  await waitUi(page, 'blocked');
+  assert.ok((await clipboard(page)).startsWith(SAFE));
+  await page.close();
+});
+
+// ---- Developer pages: pause, then let the person decide. --------------------
+test('an installer copied by a site button is paused; "Copy anyway" copies it', async () => {
   const page = await open('docs-copy.html');
   await page.click('#copy');
-  await page.waitForFunction(() => document.title === 'copied', null, { timeout: 5000 });
-  assert.equal(await clipboard(page), 'irm https://get.scoop.sh | iex');
-  await page.waitForFunction(() => !!document.querySelector('clickfix-first-aid-ui[data-state="warned"]'), null, { timeout: 5000 });
+  await waitUi(page, 'held');
+  assert.ok((await clipboard(page)).startsWith(HELD));
+  await page.keyboard.press('Tab'); // focus moves from the panel to "Copy anyway"
+  await page.keyboard.press('Enter');
+  await page.waitForFunction((t) => navigator.clipboard.readText().then((c) => c === t), INSTALLER, { timeout: 5000 });
+  await page.close();
+});
+
+test('"Always allow on this site" stops pausing that site', async () => {
+  const page = await open('docs-copy.html');
+  await page.click('#copy');
+  await waitUi(page, 'held');
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Tab'); // "Always allow on this site"
+  await page.keyboard.press('Enter');
+  await page.waitForFunction((t) => navigator.clipboard.readText().then((c) => c === t), INSTALLER, { timeout: 5000 });
+  await page.waitForTimeout(2500);
+  await setClipboard(page, 'before');
+  await page.click('#copy');
+  await page.waitForTimeout(800);
+  assert.equal(await clipboard(page), INSTALLER);
+  // Undo, so other tests start clean.
+  await page.evaluate(() => {});
+  await page.close();
+  const worker = context.serviceWorkers()[0];
+  await worker.evaluate(() => chrome.storage.local.set({ settings: { holdInstallers: true, allowSites: [] } }));
+});
+
+test('copying an installer by hand (select + Ctrl+C) is not paused', async () => {
+  const page = await open('docs-copy.html');
+  await setClipboard(page, 'before');
+  await page.evaluate(() => {
+    const r = document.createRange();
+    r.selectNodeContents(document.getElementById('cmd'));
+    getSelection().removeAllRanges();
+    getSelection().addRange(r);
+  });
+  await page.keyboard.press('Control+C');
+  await page.waitForTimeout(800);
+  assert.equal((await clipboard(page)).trim(), INSTALLER);
+  assert.equal(await uiState(page), null);
   await page.close();
 });
 
@@ -149,9 +196,10 @@ test('normal copy is untouched and silent', async () => {
   await page.close();
 });
 
+// ---- Trap-page banner. -----------------------------------------------------
 test('a trap page is flagged even before anything is copied', async () => {
   const page = await open('lure-only.html');
-  await page.waitForFunction(() => !!document.querySelector('clickfix-first-aid-ui[data-state="lure"]'), null, { timeout: 5000 });
+  await waitUi(page, 'lure');
   await page.close();
 });
 
@@ -160,16 +208,7 @@ test('trap steps revealed after a click are flagged', async () => {
   await page.waitForTimeout(1200);
   assert.equal(await uiState(page), null, 'nothing to flag while the steps are hidden');
   await page.click('#robot');
-  await page.waitForFunction(() => !!document.querySelector('clickfix-first-aid-ui[data-state="lure"]'), null, { timeout: 5000 });
-  await page.close();
-});
-
-test('the public safe demo page triggers the block', async () => {
-  const page = await open('docs/demo.html');
-  await setClipboard(page, 'before');
-  await page.click('#robot');
-  await page.waitForFunction(() => !!document.querySelector('clickfix-first-aid-ui[data-state="blocked"]'), null, { timeout: 5000 });
-  assert.ok((await clipboard(page)).startsWith(SAFE_PREFIX));
+  await waitUi(page, 'lure');
   await page.close();
 });
 
@@ -180,14 +219,83 @@ test('a normal Win+R tutorial is not flagged', async () => {
   await page.close();
 });
 
-test('the popup counts what was blocked', async () => {
+test('the public safe demo page triggers the block', async () => {
+  const page = await open('docs/demo.html');
+  await setClipboard(page, 'before');
+  await page.click('#robot');
+  await waitUi(page, 'blocked');
+  assert.ok((await clipboard(page)).startsWith(SAFE));
+  await page.close();
+});
+
+// ---- Regression tests from the independent security review. -----------------
+// clip: 'safe' = blocked text, 'held' = paused text, 'protected' = either, or 'before' = untouched
+// ui:   expected warning, or null for none
+const REVIEW = [
+  ['baseline', 'safe', 'blocked'],
+  ['tostring', 'notpayload', null],
+  ['itemsadd', 'safe', 'blocked'],
+  ['arrayproto', 'safe', 'blocked'],
+  ['regexproto', 'safe', 'blocked'],
+  ['split_junk', 'safe', 'blocked'],
+  ['late_instr', 'protected', 'blocked'],
+  ['late_instr2', 'protected', 'blocked'],
+  ['css_content', 'protected', 'blocked'],
+  ['css_content2', 'protected', 'blocked'],
+  ['shadow', 'protected', 'blocked'],
+  ['xorigin_steps', 'protected', 'blocked'],
+  ['comspec', 'safe', 'blocked'],
+  ['curlstartup', 'safe', 'blocked'],
+  ['stopprop', 'safe', 'blocked'],
+  ['flood', 'held', 'held'],
+  ['forged', 'before', null],
+  ['forged_frame', 'before', null],
+  ['fp_tutorial', 'held', 'held'],
+  ['fp_nextdata', 'held', 'held'],
+  ['iframe_realm', 'safe', 'blocked'],
+  ['iframe_realm_late', 'safe', 'blocked'],
+  ['iframe_setdata', 'safe', 'blocked'],
+  ['shadow_ta', 'safe', 'blocked']
+];
+
+for (const [name, clip, ui] of REVIEW) {
+  test(`review: ${name}`, async () => {
+    const page = await open(`review/${name}.html`);
+    await setClipboard(page, 'before');
+    await page.waitForTimeout(300);
+    await page.click('#b', { force: true, timeout: 3000 }).catch(() => {});
+    if (ui) await waitUi(page, ui).catch(() => {});
+    else await page.waitForTimeout(1800);
+    const c = await clipboard(page);
+    if (clip === 'safe') assert.ok(c.startsWith(SAFE), `clipboard: ${c}`);
+    if (clip === 'held') assert.ok(c.startsWith(HELD), `clipboard: ${c}`);
+    if (clip === 'protected') assert.ok(c.startsWith(SAFE) || c.startsWith(HELD), `clipboard: ${c}`);
+    if (clip === 'before') assert.equal(c, 'before');
+    if (clip === 'notpayload') assert.ok(!/echo test|iex/.test(c), `clipboard: ${c}`);
+    const state = await uiState(page);
+    if (ui === null) assert.ok(state === null || state === 'lure', `no warning expected, got ${state}`);
+    else assert.equal(state, ui);
+    await page.close();
+  });
+}
+
+test('the hook looks native to a simple toString check', async () => {
+  const page = await open('review/detect.html');
+  await page.click('#b');
+  await page.waitForFunction(() => document.title.startsWith('done'), null, { timeout: 5000 });
+  assert.equal(await page.title(), 'done native');
+  await page.close();
+});
+
+// ---- The extension's own pages. ----------------------------------------------
+test('the popup counts what was blocked and paused', async () => {
   const worker = context.serviceWorkers()[0];
   const extId = new URL(worker.url()).host;
   const page = await context.newPage();
   await page.goto(`chrome-extension://${extId}/popup/popup.html`);
-  await page.waitForFunction(() => Number(document.getElementById('blocked').textContent) >= 5, null, { timeout: 5000 });
-  const lures = Number(await page.textContent('#lures'));
-  assert.ok(lures >= 1, 'at least one trap page counted');
+  await page.waitForFunction(() => Number(document.getElementById('blocked').textContent) >= 10, null, { timeout: 5000 });
+  assert.ok(Number(await page.textContent('#held')) >= 3);
+  assert.ok(Number(await page.textContent('#lures')) >= 1);
   await page.close();
 });
 

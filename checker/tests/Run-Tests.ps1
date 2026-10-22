@@ -18,7 +18,7 @@ $detector = New-CfaDetector -Rules ($CfaRulesJson | ConvertFrom-Json)
 $fixtures = Get-Content -Raw -Encoding UTF8 (Join-Path $root 'tests/fixtures/commands.json') | ConvertFrom-Json
 
 # 1. Same verdicts as the JavaScript engine for every shared command.
-foreach ($pair in @(@('block', $fixtures.block), @('allow', $fixtures.allow), @('warn', $fixtures.warn))) {
+foreach ($pair in @(@('block', $fixtures.block), @('allow', $fixtures.allow), @('hold', $fixtures.hold))) {
     foreach ($p in $pair[1].PSObject.Properties) {
         $r = Test-CfaCommand -Detector $detector -Text $p.Value
         Assert-Equal $pair[0] $r.Verdict ("{0}: {1}" -f $pair[0], $p.Name)
@@ -58,7 +58,7 @@ $persist.Autoruns = @([pscustomobject]@{ Where = 'Scheduled task'; Name = '\Upda
 Assert-Equal 'danger' (Invoke-CfaAnalysis -Detector $detector -Evidence $persist).Overall 'hidden encoded task is danger'
 
 $msi = New-FakeEvidence
-$msi.MsiInstalls = @([pscustomobject]@{ Name = 'NYcTodYVA0'; Manufacturer = 'YEfAEdSV'; Time = '2026-10-19 21:40' })
+$msi.MsiInstalls = @([pscustomobject]@{ Name = 'NYcTodYVA0'; Version = '1.0.9879'; Manufacturer = 'YEfAEdSV'; Succeeded = $true; Time = '2026-10-19 21:40' })
 $msi.TempFiles = @([pscustomobject]@{ Path = 'C:\Users\me\AppData\Local\Temp\S775.msi'; Created = '2026-10-19 21:39'; Size = 1; Signed = $false; Signer = '' })
 $r = Invoke-CfaAnalysis -Detector $detector -Evidence $msi
 Assert-Equal 'review' $r.Overall 'random-named MSI and unsigned temp file are review'
@@ -70,12 +70,24 @@ Assert-Equal $false (Test-CfaRandomName 'Google Chrome') 'normal name with space
 Assert-Equal $false (Test-CfaRandomName 'GoogleChromeBeta') 'CamelCase product name'
 Assert-Equal $false (Test-CfaRandomName 'Python311') 'simple name with digits'
 
-# 4. Win+R hotkey helper keeps other letters and is reversible.
+# 4. Win+R hotkey helper: adds uppercase R and X only, never re-cases what is there.
 Assert-Equal 'RX' (Get-CfaUpdatedHotkeys -Current '' -Letters @('R', 'X')) 'add to empty'
 Assert-Equal 'ERX' (Get-CfaUpdatedHotkeys -Current 'E' -Letters @('R', 'X')) 'keeps existing letters'
-Assert-Equal 'RX' (Get-CfaUpdatedHotkeys -Current 'rx' -Letters @('R', 'X')) 'no duplicates'
-Assert-Equal 'E' (Get-CfaUpdatedHotkeys -Current 'ERX' -Letters @('R', 'X') -Remove) 'undo keeps other letters'
-Assert-Equal '' (Get-CfaUpdatedHotkeys -Current 'RX' -Letters @('R', 'X') -Remove) 'undo to empty'
+Assert-Equal 'RX' (Get-CfaUpdatedHotkeys -Current 'RX' -Letters @('R', 'X')) 'no duplicates'
+Assert-Equal $true ((Get-CfaUpdatedHotkeys -Current 'rx' -Letters @('R', 'X')) -ceq 'rxRX') 'lowercase entries are different keys and stay as they are'
+Assert-Equal 'E' (Get-CfaUpdatedHotkeys -Current 'ERX' -Letters @('R', 'X') -Remove) 'fallback undo keeps other letters'
+Assert-Equal '' (Get-CfaUpdatedHotkeys -Current 'RX' -Letters @('R', 'X') -Remove) 'fallback undo to empty'
+
+# 4b. Windows Installer events are read by field number, in any Windows language.
+$t = Get-Date '2026-10-19 21:40'
+$ok = ConvertFrom-CfaMsiEvent -Values @('NYcTodYVA0', '1.0.9879', '1033', '0', 'YEfAEdSV') -Time $t
+Assert-Equal 'NYcTodYVA0' $ok.Name 'MSI product name from field 1'
+Assert-Equal 'YEfAEdSV' $ok.Manufacturer 'MSI manufacturer from field 5'
+Assert-Equal $true $ok.Succeeded 'status 0 is a successful install'
+$failed = ConvertFrom-CfaMsiEvent -Values @('Some App', '2.0', '1033', '1603', 'Contoso') -Time $t
+Assert-Equal $false $failed.Succeeded 'status 1603 is a failed install'
+$old = ConvertFrom-CfaMsiEvent -Values @('Old App', '1.0', '1033', '0') -Time $t
+Assert-Equal '' $old.Manufacturer 'missing field 5 (Windows Installer 4.5 and older) is empty, not an error'
 
 # 5. Scripts must parse cleanly and stay ASCII (Windows PowerShell 5.1 reads files as ANSI).
 foreach ($f in @('checker/Check-ClickFix.ps1', 'checker/Protect-RunDialog.ps1')) {

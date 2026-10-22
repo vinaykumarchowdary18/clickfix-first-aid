@@ -29,7 +29,7 @@
     Do not wait for Enter before closing.
 
 .NOTES
-    ClickFix First Aid v0.1.0 - free and open source (MIT license).
+    ClickFix First Aid v0.2.0 - free and open source (MIT license).
     Exit codes: 0 = nothing found, 1 = things to review, 2 = signs of an attack.
 #>
 [CmdletBinding()]
@@ -42,12 +42,12 @@ param(
 
 Set-StrictMode -Version 2.0
 
-$CfaVersion = '0.1.0'
+$CfaVersion = '0.2.0'
 $CfaGuideUrl = 'docs/recovery.html in the ClickFix First Aid download'
 
 # Detection rules, generated from rules/clickfix-rules.json. Do not edit here.
 $CfaRulesJson = @'
-{"name":"clickfix-first-aid-rules","version":"1.0.0","updated":"2026-10-22","notes":"Patterns must work in both JavaScript and .NET regex engines. All patterns are matched case-insensitively.","limits":{"maxChars":20000,"maxLinesForAutoBlock":5},"command":{"executors":[{"id":"powershell","label":"Starts PowerShell","pattern":"\\b(?:powershell|pwsh)(?:\\.exe)?\\b"},{"id":"cmd","label":"Starts the Windows command prompt","pattern":"\\bcmd(?:\\.exe)?\\s*/[ckr]\\b|\\bcmd\\.exe\\b"},{"id":"mshta","label":"Uses mshta, a Windows tool attackers use to run web code","pattern":"\\bmshta(?:\\.exe)?\\b"},{"id":"msiexec","label":"Runs a Windows installer","pattern":"\\bmsiexec(?:\\.exe)?\\b"},{"id":"rundll32","label":"Uses rundll32 to load a program library","pattern":"\\brundll32(?:\\.exe)?\\b"},{"id":"regsvr32","label":"Uses regsvr32 to load a program library","pattern":"\\bregsvr32(?:\\.exe)?\\b"},{"id":"script-host","label":"Runs a Windows script file","pattern":"\\b[wc]script(?:\\.exe)?\\b"},{"id":"certutil","label":"Uses certutil, often abused to download files","pattern":"\\bcertutil(?:\\.exe)?\\b"},{"id":"bitsadmin","label":"Uses bitsadmin, often abused to download files","pattern":"\\bbitsadmin(?:\\.exe)?\\b"},{"id":"conhost","label":"Starts a hidden console window","pattern":"\\bconhost(?:\\.exe)?\\b"},{"id":"finger","label":"Uses the finger tool to fetch commands from a server","pattern":"\\bfinger(?:\\.exe)?\\s+\\S+@\\S+"},{"id":"dotnet-lolbin","label":"Uses a .NET build tool to run code","pattern":"\\b(?:msbuild|installutil|regasm|regsvcs)(?:\\.exe)?\\b"},{"id":"schtasks","label":"Creates a scheduled task","pattern":"\\bschtasks(?:\\.exe)?\\b"},{"id":"invoke-expression","label":"Runs text as code (Invoke-Expression)","pattern":"\\b(?:iex|invoke-expression)\\b"},{"id":"osascript","label":"Runs an AppleScript on a Mac","pattern":"\\bosascript\\b"},{"id":"pipe-to-shell","label":"Pipes downloaded text straight into a shell","pattern":"\\|\\s*(?:sudo\\s+)?(?:ba|z|da)?sh\\b"},{"id":"shell-c","label":"Runs a shell command string","pattern":"\\b(?:ba|z)?sh\\s+-c\\b"}],"remote":[{"id":"url","label":"Contains a web address","pattern":"\\b(?:https?|ftp)://[^\\s\"'<>]+"},{"id":"unc-path","label":"Loads a file from a remote network share","pattern":"\\\\\\\\[a-z0-9._-]+(?:@ssl)?(?:@\\d+)?\\\\"},{"id":"downloader","label":"Downloads something from the internet","pattern":"\\b(?:iwr|irm|invoke-webrequest|invoke-restmethod|start-bitstransfer|downloadstring|downloadfile|downloaddata|net\\.webclient|curl(?:\\.exe)?|wget(?:\\.exe)?)\\b"},{"id":"finger-host","label":"Asks a remote server for commands (finger)","pattern":"\\bfinger(?:\\.exe)?\\s+\\S+@\\S+"},{"id":"ip-address","label":"Contains an IP address","pattern":"\\b\\d{1,3}(?:\\.\\d{1,3}){3}\\b"},{"id":"bare-domain","label":"Contains an unusual web domain","pattern":"\\b[a-z0-9-]+(?:\\.[a-z0-9-]+)*\\.(?:top|xyz|icu|shop|click|cyou|sbs|lat|rest|live|online|site|website|space|fun|cfd|bond|ru|su)(?=[/:\\s\"']|$)"}],"encoded":[{"id":"ps-encoded","label":"Hides its real instructions in encoded text","pattern":"\\s-e(?:nc|ncodedcommand|c)?\\s+[a-z0-9+/=]{20,}"},{"id":"from-base64","label":"Decodes hidden text before running it","pattern":"frombase64string|\\bbase64\\s+(?:-d|--decode|-D)\\b|\\batob\\("},{"id":"long-base64","label":"Contains a long block of encoded text","pattern":"[a-z0-9+/]{120,}={0,2}"}],"stealth":[{"id":"hidden-window","label":"Hides its window so you cannot see it running","weight":25,"pattern":"\\s-w(?:in(?:dow(?:style)?)?)?\\s+(?:h(?:idden)?|1)\\b"},{"id":"policy-bypass","label":"Turns off PowerShell safety settings","weight":10,"pattern":"\\s-(?:nop(?:rofile)?|ep\\s+bypass|exec(?:utionpolicy)?\\s+bypass|noni(?:nteractive)?)\\b"},{"id":"encoded","label":"Hides its real instructions in encoded text","weight":30,"pattern":"\\s-e(?:nc|ncodedcommand|c)?\\s+[a-z0-9+/=]{20,}|frombase64string|\\bbase64\\s+(?:-d|--decode|-D)\\b"},{"id":"caret-obfuscation","label":"Disguised with ^ symbols to dodge antivirus","weight":25,"pattern":"\\w\\^\\w\\^?\\w"},{"id":"backtick-obfuscation","label":"Disguised with ` symbols to dodge antivirus","weight":20,"pattern":"[a-z]`[a-z]+`[a-z]"},{"id":"string-splitting","label":"Splits words apart to dodge antivirus","weight":15,"pattern":"['\"]\\s*\\+\\s*['\"]"},{"id":"env-substring","label":"Builds words from pieces of system variables","weight":25,"pattern":"%[a-z_]+:~-?\\d+,-?\\d+%"},{"id":"headless-console","label":"Runs in an invisible console","weight":25,"pattern":"\\bconhost(?:\\.exe)?\\s+--headless"},{"id":"temp-drop","label":"Saves a file into a temporary or app-data folder","weight":10,"pattern":"%temp%|\\$env:temp|%appdata%|\\$env:appdata|%localappdata%|\\$env:localappdata|%programdata%|\\\\appdata\\\\|/tmp/"},{"id":"quiet-install","label":"Installs a program silently, without asking you","weight":20,"pattern":"\\bmsiexec(?:\\.exe)?\\b[^\\n]*\\s/q[nb]?\\b"},{"id":"start-minimized","label":"Starts minimized so you do not notice it","weight":15,"pattern":"\\bstart\\s+(?:\"\"\\s+)?/min\\b"},{"id":"raw-ip","label":"Connects to a raw IP address instead of a website name","weight":20,"pattern":"(?:https?://|\\\\\\\\|@)\\d{1,3}(?:\\.\\d{1,3}){3}\\b"},{"id":"suspicious-domain","label":"Uses a cheap web domain popular with attackers","weight":15,"pattern":"\\b[a-z0-9-]+(?:\\.[a-z0-9-]+)*\\.(?:top|xyz|icu|shop|click|cyou|sbs|lat|rest|live|online|site|website|space|fun|cfd|bond|ru|su)(?=[/:\\s\"']|$)"},{"id":"remote-share","label":"Runs code straight from a remote network share","weight":25,"pattern":"\\\\\\\\[a-z0-9._-]+(?:@ssl)?(?:@\\d+)?\\\\"},{"id":"pipe-to-cmd","label":"Feeds downloaded text straight into the command prompt","weight":20,"pattern":"\\|\\s*cmd(?:\\.exe)?\\b"},{"id":"space-padding","label":"Pads the command with spaces to hide part of it","weight":25,"pattern":"\\S {25,}\\S"}],"decoys":[{"id":"fake-verification-comment","label":"Hides fake \"I am not a robot\" text after the real command","pattern":"(?:#|::|\\brem\\b)[^\\n]{0,200}?(?:verif|captcha|robot|human|cloudflare|turnstile|security\\s*check|ray\\s*id|identity|\\u2705|\\u2714)"},{"id":"fake-file-path","label":"Disguises the command as a file path (FileFix trick)","pattern":"#\\s*[a-z]:\\\\[^\\n]*\\.(?:docx?|pdf|xlsx?|pptx?|txt|csv)\\b"}]},"page":{"runShortcut":[{"id":"win-r","label":"Tells you to press Windows + R","pattern":"(?:\\bwin(?:dows)?\\b|\\u229e)[^\\n]{0,30}?(?:\\+|\\band\\b|&)\\s*[\"'\\u201c\\u201d]?r\\b|\\bwindows\\s*(?:logo\\s*)?(?:key|button)\\b[^\\n]{0,40}?\\bpress\\s*[\"'\\u201c\\u201d]?r\\b"},{"id":"win-x","label":"Tells you to press Windows + X","pattern":"(?:\\bwin(?:dows)?\\b|\\u229e)[^\\n]{0,30}?(?:\\+|\\band\\b|&)\\s*[\"'\\u201c\\u201d]?x\\b"},{"id":"run-dialog","label":"Mentions the Run dialog","pattern":"\\brun\\s+(?:dialog|box|window|prompt)\\b"},{"id":"open-terminal","label":"Tells you to open a terminal","pattern":"\\bopen\\s+(?:the\\s+)?(?:powershell|windows\\s+terminal|terminal|command\\s+prompt)\\b"},{"id":"explorer-address-bar","label":"Tells you to paste into File Explorer (FileFix)","pattern":"file\\s*explorer[^\\n]{0,120}?address\\s*bar|address\\s*bar[^\\n]{0,120}?file\\s*explorer|\\bctrl\\s*\\+\\s*l\\b"},{"id":"mac-terminal","label":"Tells you to open Terminal on a Mac","pattern":"(?:\\bcmd\\b|\\bcommand\\b|\\u2318)\\s*\\+\\s*space\\b"}],"paste":[{"id":"paste","label":"Tells you to paste","pattern":"\\bctrl\\s*\\+\\s*v\\b|(?:\\bcmd\\b|\\bcommand\\b|\\u2318)\\s*\\+\\s*v\\b|\\bpaste\\b"}],"verifyTheme":[{"id":"verify","label":"Pretends to be a human or security check","pattern":"\\bverif(?:y|ication)\\b|captcha|\\bi\\s*(?:'|\\u2019)?\\s*a?m\\s+not\\s+a\\s+robot\\b|\\bare\\s+you\\s+(?:a\\s+)?human\\b|\\bhuman\\s+check\\b|cloudflare|turnstile|\\bsecurity\\s+check\\b|\\bray\\s+id\\b|\\bprove\\s+you\\b"},{"id":"fake-fix","label":"Pretends you need to fix an error","pattern":"\\bfix\\s+(?:the\\s+|this\\s+)?(?:error|issue|problem)\\b|\\bupdate\\s+your\\s+browser\\b|\\bbrowser\\s+update\\b|\\bfailed\\s+to\\s+load\\b"}]},"verdict":{"stealthBlockAt":25,"stealthOnlyBlockAt":50}}
+{"name":"clickfix-first-aid-rules","version":"2.0.0","updated":"2026-10-22","notes":"Patterns must work in both JavaScript and .NET regex engines. All patterns are matched case-insensitively.","limits":{"maxChars":20000,"maxLinesForAutoBlock":5},"command":{"executors":[{"id":"powershell","label":"Starts PowerShell","pattern":"\\b(?:powershell|pwsh)(?:\\.exe)?\\b"},{"id":"cmd","label":"Starts the Windows command prompt","pattern":"\\bcmd(?:\\.exe)?\\s*/[ckr]\\b|\\bcmd\\.exe\\b"},{"id":"mshta","label":"Uses mshta, a Windows tool attackers use to run web code","pattern":"\\bmshta(?:\\.exe)?\\b"},{"id":"msiexec","label":"Runs a Windows installer","pattern":"\\bmsiexec(?:\\.exe)?\\b"},{"id":"rundll32","label":"Uses rundll32 to load a program library","pattern":"\\brundll32(?:\\.exe)?\\b"},{"id":"regsvr32","label":"Uses regsvr32 to load a program library","pattern":"\\bregsvr32(?:\\.exe)?\\b"},{"id":"script-host","label":"Runs a Windows script file","pattern":"\\b[wc]script(?:\\.exe)?\\b"},{"id":"certutil","label":"Uses certutil, often abused to download files","pattern":"\\bcertutil(?:\\.exe)?\\b"},{"id":"bitsadmin","label":"Uses bitsadmin, often abused to download files","pattern":"\\bbitsadmin(?:\\.exe)?\\b"},{"id":"conhost","label":"Starts a hidden console window","pattern":"\\bconhost(?:\\.exe)?\\b"},{"id":"finger","label":"Uses the finger tool to fetch commands from a server","pattern":"\\bfinger(?:\\.exe)?\\s+\\S+@\\S+"},{"id":"dotnet-lolbin","label":"Uses a .NET build tool to run code","pattern":"\\b(?:msbuild|installutil|regasm|regsvcs)(?:\\.exe)?\\b"},{"id":"schtasks","label":"Creates a scheduled task","pattern":"\\bschtasks(?:\\.exe)?\\b"},{"id":"invoke-expression","label":"Runs text as code (Invoke-Expression)","pattern":"\\b(?:iex|invoke-expression)\\b"},{"id":"osascript","label":"Runs an AppleScript on a Mac","pattern":"\\bosascript\\b"},{"id":"pipe-to-shell","label":"Pipes downloaded text straight into a shell","pattern":"\\|\\s*(?:sudo\\s+)?(?:ba|z|da)?sh\\b"},{"id":"shell-c","label":"Runs a shell command string","pattern":"\\b(?:ba|z)?sh\\s+-c\\b"},{"id":"comspec","label":"Starts the command prompt through the %ComSpec% variable","pattern":"%comspec%"},{"id":"env-built-command","label":"Builds a program name from pieces of a system variable","pattern":"%[a-z_]+:~-?\\d+,-?\\d+%[a-z]"},{"id":"short-name","label":"Uses a hidden short file name (like POWERS~1.EXE) to start a program","pattern":"\\b[a-z0-9]{1,6}~\\d(?:\\.exe)?\\b"},{"id":"autostart-write","label":"Puts a file where Windows starts it automatically","pattern":"start\\s*menu\\\\programs\\\\startup|\\\\currentversion\\\\run(?:once)?\\b|shell:startup|shell:common\\s*startup"},{"id":"remote-script","label":"Opens a program or script straight from a remote server","pattern":"\\\\\\\\[^\\s\\\"']+\\.(?:hta|exe|bat|cmd|ps1|vbs|vbe|js|jse|wsf|scr|dll|lnk|msi|cpl)\\b"},{"id":"dynamic-invoke","label":"Calls a PowerShell command by building its name at run time","pattern":"(?:^|[\\s;(\\\"'])[&.]\\s*\\(|\\[scriptblock\\]::create|\\$executioncontext|\\binvoke(?:command|script)\\b|\\b(?:gcm|gal|get-command|get-alias)\\s+\\S*\\*"},{"id":"chmod-x","label":"Makes a downloaded file runnable (Mac/Linux)","pattern":"\\bchmod\\s+(?:\\+x|[0-7]?7[0-7]{2})\\b"},{"id":"run-local-file","label":"Runs a file it just saved","pattern":"(?:&&|;|\\|\\|)\\s*\\./[\\w.-]+"},{"id":"process-substitution","label":"Runs a script downloaded on the fly","pattern":"\\b(?:ba|z)?sh\\s+<\\("},{"id":"python-download","label":"Uses Python to download and run code","pattern":"\\bpython3?\\s+-c\\b[^\\n]*(?:urlopen|urllib|requests\\.get)"}],"remote":[{"id":"url","label":"Contains a web address","pattern":"\\b(?:https?|ftp)://[^\\s\"'<>]+"},{"id":"unc-path","label":"Loads a file from a remote network share","pattern":"\\\\\\\\[a-z0-9._-]+(?:@ssl)?(?:@\\d+)?\\\\"},{"id":"downloader","label":"Downloads something from the internet","pattern":"\\b(?:iwr|irm|invoke-webrequest|invoke-restmethod|start-bitstransfer|downloadstring|downloadfile|downloaddata|net\\.webclient|curl(?:\\.exe)?|wget(?:\\.exe)?)\\b"},{"id":"finger-host","label":"Asks a remote server for commands (finger)","pattern":"\\bfinger(?:\\.exe)?\\s+\\S+@\\S+"},{"id":"bare-domain","label":"Contains an unusual web domain","pattern":"\\b[a-z0-9-]+(?:\\.[a-z0-9-]+)*\\.(?:top|xyz|icu|shop|click|cyou|sbs|lat|rest|live|online|site|website|space|fun|cfd|bond|ru|su)(?=[/:\\s\"']|$)"},{"id":"bare-host-path","label":"Contains a web address","pattern":"\\b[a-z0-9-]+(?:\\.[a-z0-9-]+)*\\.[a-z]{2,24}/[^\\s\\\"'<>]+"}],"encoded":[{"id":"ps-encoded","label":"Hides its real instructions in encoded text","pattern":"(?:^|\\s)[-/]e(?:c|n(?:c(?:o(?:d(?:e(?:d(?:c(?:o(?:m(?:m(?:a(?:n(?:d)?)?)?)?)?)?)?)?)?)?)?)?)?\\s+[a-z0-9+/=]{16,}"},{"id":"from-base64","label":"Decodes hidden text before running it","pattern":"frombase64string|\\bbase64\\s+(?:-d|--decode|-D)\\b|\\batob\\("},{"id":"long-base64","label":"Contains a long block of encoded text","pattern":"[a-z0-9+/]{120,}={0,2}"}],"stealth":[{"id":"hidden-window","label":"Hides its window so you cannot see it running","weight":25,"pattern":"(?:^|\\s)[-/]w(?:i(?:n(?:d(?:o(?:w(?:s(?:t(?:y(?:l(?:e)?)?)?)?)?)?)?)?)?)?\\s+(?:h(?:i(?:d(?:d(?:e(?:n)?)?)?)?)?|1)\\b"},{"id":"policy-bypass","label":"Turns off PowerShell safety settings","weight":10,"pattern":"(?:^|\\s)[-/](?:nop\\w*|noni\\w*|ep\\s+bypass|ex\\w*\\s+bypass)\\b"},{"id":"encoded","label":"Hides its real instructions in encoded text","weight":30,"pattern":"(?:^|\\s)[-/]e(?:c|n(?:c(?:o(?:d(?:e(?:d(?:c(?:o(?:m(?:m(?:a(?:n(?:d)?)?)?)?)?)?)?)?)?)?)?)?)?\\s+[a-z0-9+/=]{16,}|frombase64string|\\bbase64\\s+(?:-d|--decode|-D)\\b"},{"id":"caret-obfuscation","label":"Disguised with ^ symbols to dodge antivirus","weight":25,"pattern":"\\w\\^\\w\\^?\\w"},{"id":"backtick-obfuscation","label":"Disguised with ` symbols to dodge antivirus","weight":20,"pattern":"[a-z]`[a-z]+`[a-z]"},{"id":"string-splitting","label":"Splits words apart to dodge antivirus","weight":15,"pattern":"['\"]\\s*\\+\\s*['\"]"},{"id":"env-substring","label":"Builds words from pieces of system variables","weight":25,"pattern":"%[a-z_]+:~-?\\d+,-?\\d+%"},{"id":"headless-console","label":"Runs in an invisible console","weight":25,"pattern":"\\bconhost(?:\\.exe)?\\s+--headless"},{"id":"temp-drop","label":"Saves a file into a temporary or app-data folder","weight":10,"pattern":"%temp%|\\$env:temp|%appdata%|\\$env:appdata|%localappdata%|\\$env:localappdata|%programdata%|\\\\appdata\\\\|/tmp/"},{"id":"quiet-install","label":"Installs a program silently, without asking you","weight":20,"pattern":"\\bmsiexec(?:\\.exe)?\\b[^\\n]*\\s/q[nb]?\\b"},{"id":"start-minimized","label":"Starts minimized so you do not notice it","weight":15,"pattern":"\\bstart\\s+(?:\"\"\\s+)?/min\\b"},{"id":"raw-ip","label":"Connects to a raw IP address instead of a website name","weight":20,"pattern":"(?:https?://|\\\\\\\\|@)(?!(?:10|127)\\.|192\\.168\\.|172\\.(?:1[6-9]|2\\d|3[01])\\.)\\d{1,3}(?:\\.\\d{1,3}){3}\\b"},{"id":"suspicious-domain","label":"Uses a cheap web domain popular with attackers","weight":15,"pattern":"\\b[a-z0-9-]+(?:\\.[a-z0-9-]+)*\\.(?:top|xyz|icu|shop|click|cyou|sbs|lat|rest|live|online|site|website|space|fun|cfd|bond|ru|su)(?=[/:\\s\"']|$)"},{"id":"remote-share","label":"Runs code from a server on the internet through a network share","weight":25,"pattern":"\\\\\\\\(?!(?:10|127)\\.|192\\.168\\.|172\\.(?:1[6-9]|2\\d|3[01])\\.)(?![^\\\\\\s]*\\.(?:local|lan|corp|internal|intranet|home|localdomain)(?:@|\\\\))(?:[a-z0-9-]+\\.[a-z0-9.-]*[a-z0-9]|\\d{1,3}(?:\\.\\d{1,3}){3})(?:@ssl)?(?:@\\d+)?\\\\|@ssl\\\\|\\\\davwwwroot\\\\"},{"id":"pipe-to-cmd","label":"Feeds downloaded text straight into the command prompt","weight":20,"pattern":"\\|\\s*cmd(?:\\.exe)?\\b"},{"id":"space-padding","label":"Pads the command with spaces to hide part of it","weight":25,"pattern":"\\S {25,}\\S"},{"id":"comspec-variable","label":"Hides the command prompt behind the %ComSpec% variable","weight":15,"pattern":"%comspec%"},{"id":"env-built-command","label":"Builds a program name from pieces of a system variable","weight":50,"pattern":"%[a-z_]+:~-?\\d+,-?\\d+%[a-z]"},{"id":"autostart","label":"Makes something start every time you sign in","weight":30,"pattern":"start\\s*menu\\\\programs\\\\startup|\\\\currentversion\\\\run(?:once)?\\b|shell:startup|shell:common\\s*startup"},{"id":"download-then-run","label":"Runs the file straight after downloading it","weight":20,"pattern":"(?:&&|;|\\|\\|)\\s*(?:start\\s+(?:\\\"\\\"\\s+)?(?:/min\\s+)?)?\\\"?(?:%(?:temp|tmp|appdata|localappdata|public|programdata)%|\\$env:(?:temp|tmp|appdata|localappdata|public|programdata))[^\\s\\\"]*\\.(?:hta|exe|bat|cmd|ps1|vbs|vbe|js|jse|wsf|scr|dll|lnk|msi|cpl)\\b"},{"id":"format-operator","label":"Scrambles words with the -f format trick to dodge antivirus","weight":20,"pattern":"\\{\\d\\}\\{\\d\\}[^\\n]{0,20}?-f\\b"},{"id":"dynamic-invoke","label":"Calls a command by building its name at run time","weight":15,"pattern":"(?:^|[\\s;(\\\"'])[&.]\\s*\\(|\\[scriptblock\\]::create|\\$executioncontext|\\binvoke(?:command|script)\\b|\\b(?:gcm|gal|get-command|get-alias)\\s+\\S*\\*"},{"id":"short-name","label":"Hides the program name behind a short file name","weight":15,"pattern":"\\b[a-z0-9]{1,6}~\\d(?:\\.exe)?\\b"},{"id":"quarantine-removal","label":"Removes the Mac's downloaded-file safety check","weight":25,"pattern":"\\bxattr\\s+-[a-z]*c[a-z]*\\b|\\bxattr\\s+-[a-z]*d[a-z]*\\s+com\\.apple\\.quarantine"},{"id":"chmod-run","label":"Downloads, makes runnable and runs a file in one go","weight":25,"pattern":"\\bchmod\\s+(?:\\+x|[0-7]?7[0-7]{2})\\b[^\\n]*(?:&&|;)\\s*\\./"}],"decoys":[{"id":"fake-verification-comment","label":"Hides fake \"I am not a robot\" text after the real command","pattern":"(?:#|::|\\brem\\b)[^\\n]{0,200}?(?:\\brobot\\b|captcha|\\bray\\s*id\\b|verification\\s*(?:id|code)\\b|human\\s*verification|\\bi\\s*am\\s*(?:a\\s+)?human\\b|cloudflare\\s+(?:ray|verification|human|security|check)|\\u2705|\\u2714)"},{"id":"fake-file-path","label":"Disguises the command as a file path (FileFix trick)","pattern":"#\\s*[a-z]:\\\\[^\\n]*\\.(?:docx?|pdf|xlsx?|pptx?|txt|csv)\\b"}]},"page":{"runShortcut":[{"id":"win-r","label":"Tells you to press Windows + R","pattern":"(?:\\bwin(?:dows)?\\b|\\u229e)[^\\n]{0,40}?(?:\\+|\\band\\b|&|\\bthen\\b|\\btap\\b|\\bpress\\b)\\s*(?:the\\s+)?[\\[(\\\"'\\u201c\\u201d]?r[\\])\\\"'\\u201c\\u201d]?(?:\\s+key)?\\b"},{"id":"win-x","label":"Tells you to press Windows + X","pattern":"(?:\\bwin(?:dows)?\\b|\\u229e)[^\\n]{0,40}?(?:\\+|\\band\\b|&|\\bthen\\b|\\btap\\b|\\bpress\\b)\\s*(?:the\\s+)?[\\[(\\\"'\\u201c\\u201d]?x[\\])\\\"'\\u201c\\u201d]?(?:\\s+key)?\\b"},{"id":"run-dialog","label":"Mentions the Run dialog","pattern":"\\brun\\s+(?:dialog|box|window|prompt)\\b"},{"id":"open-terminal","label":"Tells you to open a terminal","pattern":"\\bopen\\s+(?:the\\s+)?(?:powershell|windows\\s+terminal|terminal|command\\s+prompt)\\b"},{"id":"explorer-address-bar","label":"Tells you to paste into File Explorer (FileFix)","pattern":"file\\s*explorer[^\\n]{0,120}?address\\s*bar|address\\s*bar[^\\n]{0,120}?file\\s*explorer|\\bctrl\\s*\\+\\s*l\\b"},{"id":"mac-terminal","label":"Tells you to open Terminal on a Mac","pattern":"(?:\\bcmd\\b|\\bcommand\\b|\\u2318)\\s*\\+\\s*space\\b"}],"paste":[{"id":"paste","label":"Tells you to paste","pattern":"\\b(?:ctrl|strg)\\b[^\\n]{0,20}?(?:\\+|\\band\\b|&|\\bthen\\b|\\btap\\b|\\bpress\\b)\\s*(?:the\\s+)?[\\[(\\\"'\\u201c\\u201d]?v\\b|(?:\\bcmd\\b|\\bcommand\\b|\\u2318)\\s*\\+\\s*v\\b|\\bpaste\\b|\\bpega\\b|\\bcoller\\b|\\beinf\\u00fcgen\\b|\\bincolla\\b"}],"verifyTheme":[{"id":"verify","label":"Pretends to be a human or security check","pattern":"\\bverif(?:y|ication)\\b|captcha|\\bi\\s*(?:'|\\u2019)?\\s*a?m\\s+not\\s+a\\s+robot\\b|\\bare\\s+you\\s+(?:a\\s+)?human\\b|\\bhuman\\s+check\\b|cloudflare|turnstile|\\bsecurity\\s+check\\b|\\bray\\s+id\\b|\\bprove\\s+you\\b|verificaci|verifica\\u00e7|v\\u00e9rif|verifizier|best\\u00e4tig|\\bverifica\\b|no\\s+soy\\s+un\\s+robot|n\\u00e3o\\s+sou\\s+um\\s+rob|je\\s+ne\\s+suis\\s+pas\\s+un\\s+robot|ich\\s+bin\\s+kein\\s+roboter"},{"id":"fake-fix","label":"Pretends you need to fix an error","pattern":"\\bfix\\s+(?:the\\s+|this\\s+)?(?:error|issue|problem)\\b|\\bupdate\\s+your\\s+browser\\b|\\bbrowser\\s+update\\b|\\bfailed\\s+to\\s+load\\b"}]},"verdict":{"stealthBlockAt":25,"stealthOnlyBlockAt":50}}
 '@
 
 # ---------------------------------------------------------------------------
@@ -57,7 +57,7 @@ $CfaRulesJson = @'
 
 function New-CfaDetector {
     param([Parameter(Mandatory = $true)] $Rules)
-    $opts = [System.Text.RegularExpressions.RegexOptions]::IgnoreCase
+    $opts = [System.Text.RegularExpressions.RegexOptions]::IgnoreCase -bor [System.Text.RegularExpressions.RegexOptions]::CultureInvariant
     $compile = {
         param($list)
         $out = New-Object System.Collections.ArrayList
@@ -108,6 +108,21 @@ function Get-CfaMatches {
     return , $found
 }
 
+function ConvertTo-CfaUnified {
+    # Curly quotes and Unicode dashes become plain ' " and - (PowerShell accepts both).
+    param([string]$Text)
+    $s = $Text -replace '[\u2010-\u2015\u2212]', '-'
+    $s = $s -replace '[\u2018\u2019\u201a\u201b]', "'"
+    $s = $s -replace '[\u201c\u201d\u201e\u201f]', '"'
+    return $s
+}
+
+function Get-CfaCodeLineCount {
+    # Lines that do something: not empty and not comments (#, ::, rem).
+    param([string]$Text)
+    return @($Text -split "\r\n|\r|\n" | Where-Object { $_ -match '\S' -and $_ -notmatch '^\s*(#|::|rem\b)' }).Count
+}
+
 function ConvertTo-CfaNormalized {
     # Undo simple disguises: c^m^d, p`ow`ershell, 'pow'+'ershell', p""owershell
     param([string]$Text)
@@ -119,25 +134,29 @@ function ConvertTo-CfaNormalized {
 }
 
 function Test-CfaCommand {
+    # Same decisions as engine/detector.js, without the web-page part.
+    # Verdicts: block (attack), hold (downloads and runs something), allow.
     param([Parameter(Mandatory = $true)] $Detector, [AllowEmptyString()][string]$Text)
     $raw = [string]$Text
     if ($raw.Length -gt $Detector.MaxChars) { $raw = $raw.Substring(0, $Detector.MaxChars) }
-    $norm = ConvertTo-CfaNormalized $raw
-    $lines = @($raw -split "\r\n|\r|\n" | Where-Object { $_ -match '\S' }).Count
+    $uni = ConvertTo-CfaUnified $raw
+    $norm = ConvertTo-CfaNormalized $uni
+    $lines = Get-CfaCodeLineCount $raw
 
     $exec = Get-CfaMatches $Detector.Executors $norm $null
     $remote = Get-CfaMatches $Detector.Remote $norm $null
-    $encoded = Get-CfaMatches $Detector.Encoded $raw $null
+    $encoded = Get-CfaMatches $Detector.Encoded $uni $null
     $seen = @{}
     $stealth = New-Object System.Collections.ArrayList
-    foreach ($m in (Get-CfaMatches $Detector.Stealth $raw $seen)) { [void]$stealth.Add($m) }
+    foreach ($m in (Get-CfaMatches $Detector.Stealth $uni $seen)) { [void]$stealth.Add($m) }
     foreach ($m in (Get-CfaMatches $Detector.Stealth $norm $seen)) { [void]$stealth.Add($m) }
-    $decoys = Get-CfaMatches $Detector.Decoys $raw $null
+    $decoys = Get-CfaMatches $Detector.Decoys $uni $null
 
     $score = 0
     foreach ($m in $stealth) { $score += $m.Weight }
     $hasExec = $exec.Count -gt 0
     $danger = $hasExec -and ($remote.Count -gt 0 -or $encoded.Count -gt 0)
+    $long = $lines -gt $Detector.MaxLines
 
     $why = New-Object System.Collections.ArrayList
     foreach ($m in @($exec | Select-Object -First 2)) { [void]$why.Add($m.Label) }
@@ -146,22 +165,23 @@ function Test-CfaCommand {
 
     $reasons = New-Object System.Collections.ArrayList
     $add = { param($items) foreach ($i in $items) { if (-not $reasons.Contains($i)) { [void]$reasons.Add($i) } } }
+    $stealthLabels = @($stealth | ForEach-Object { $_.Label })
     $verdict = 'allow'; $rule = ''
 
     if ($hasExec) {
         if ($decoys.Count -gt 0) {
-            & $add @($decoys | ForEach-Object { $_.Label }); & $add $why; & $add @($stealth | ForEach-Object { $_.Label })
+            & $add @($decoys | ForEach-Object { $_.Label }); & $add $why; & $add $stealthLabels
             $verdict = 'block'; $rule = 'decoy'
         } elseif ($danger -and $score -ge $Detector.BlockAt) {
-            & $add $why; & $add @($stealth | ForEach-Object { $_.Label })
-            if ($lines -gt $Detector.MaxLines) { $verdict = 'warn'; $rule = 'stealthy-but-long' }
-            else { $verdict = 'block'; $rule = 'stealthy-download-and-run' }
+            & $add $why; & $add $stealthLabels
+            if ($long) { $verdict = 'hold'; $rule = 'stealthy-long-script' } else { $verdict = 'block'; $rule = 'stealthy-download-and-run' }
+        } elseif ($score -ge $Detector.StealthOnlyAt) {
+            & $add $why; & $add $stealthLabels
+            if ($long) { $verdict = 'hold' } else { $verdict = 'block' }
+            $rule = 'heavily-disguised'
         } elseif ($danger) {
-            & $add $why; & $add @($stealth | ForEach-Object { $_.Label })
-            $verdict = 'warn'; $rule = 'download-and-run'
-        } elseif ($score -ge $Detector.StealthOnlyAt -and $lines -le $Detector.MaxLines) {
-            & $add $why; & $add @($stealth | ForEach-Object { $_.Label })
-            $verdict = 'block'; $rule = 'heavily-disguised'
+            & $add $why; & $add $stealthLabels
+            $verdict = 'hold'; $rule = 'download-and-run'
         }
     }
 
@@ -178,6 +198,22 @@ function Get-CfaDefanged {
     $s = [string]$Text
     if ($s.Length -gt $Max) { $s = $s.Substring(0, $Max) + ' ...' }
     return ($s -replace '\b(h)(tt)(ps?)://', '$1xx$3[://]')
+}
+
+function ConvertFrom-CfaMsiEvent {
+    # Event 1033 fields (Microsoft "Event Logging" docs): 1 ProductName,
+    # 2 ProductVersion, 3 ProductLanguage, 4 status (0 = success), 5 Manufacturer.
+    param([object[]]$Values, [datetime]$Time)
+    $v = @($Values)
+    $get = { param($i) if ($v.Count -gt $i -and $null -ne $v[$i]) { [string]$v[$i] } else { '' } }
+    $status = & $get 3
+    return [pscustomobject]@{
+        Name         = & $get 0
+        Version      = & $get 1
+        Manufacturer = & $get 4
+        Succeeded    = ($status -eq '0' -or $status -eq '')
+        Time         = $Time.ToString('yyyy-MM-dd HH:mm')
+    }
 }
 
 function Test-CfaRandomName {
@@ -254,21 +290,31 @@ function Get-CfaEvidence {
 
     # 4. Programs and scripts created recently in temporary / app-data folders.
     try {
-        $exts = @('.exe', '.msi', '.hta', '.ps1', '.vbs', '.vbe', '.js', '.jse', '.bat', '.cmd', '.scr', '.com', '.pif')
+        $exts = @('.exe', '.msi', '.hta', '.ps1', '.vbs', '.vbe', '.js', '.jse', '.wsf', '.bat', '.cmd', '.scr', '.com', '.pif', '.cpl', '.msc')
         $roots = @($env:TEMP, $env:APPDATA, $env:LOCALAPPDATA, $env:PUBLIC, $env:ProgramData) | Where-Object { $_ } | Select-Object -Unique
+        $seenPaths = @{}
         $files = @()
         foreach ($root in $roots) {
             if (-not (Test-Path -LiteralPath $root)) { continue }
-            $depth = 1
-            foreach ($f in @(Get-ChildItem -LiteralPath $root -File -Recurse -Depth $depth -Force -ErrorAction SilentlyContinue)) {
-                if ($exts -notcontains $f.Extension.ToLowerInvariant()) { continue }
+            $isTemp = ($env:TEMP -and $root -eq $env:TEMP)
+            foreach ($f in @(Get-ChildItem -LiteralPath $root -File -Recurse -Depth 2 -Force -ErrorAction SilentlyContinue)) {
+                $ext = $f.Extension.ToLowerInvariant()
+                # DLLs only in Temp: elsewhere in AppData, apps update them all the time.
+                if ($exts -notcontains $ext -and -not ($isTemp -and $ext -eq '.dll')) { continue }
                 if ($f.CreationTime -lt $since) { continue }
+                if ($f.FullName -like '*\Microsoft\Windows\Recent\*') { continue }
+                if ($seenPaths.ContainsKey($f.FullName)) { continue }
+                $seenPaths[$f.FullName] = $true
                 $signer = ''; $status = 'NotSigned'
-                try {
-                    $sig = Get-AuthenticodeSignature -LiteralPath $f.FullName -ErrorAction Stop
-                    $status = [string]$sig.Status
-                    if ($sig.SignerCertificate) { $signer = $sig.SignerCertificate.GetNameInfo('SimpleName', $false) }
-                } catch { $status = 'Unknown' }
+                if ($f.Length -gt 200MB) {
+                    $status = 'Unknown'
+                } else {
+                    try {
+                        $sig = Get-AuthenticodeSignature -LiteralPath $f.FullName -ErrorAction Stop
+                        $status = [string]$sig.Status
+                        if ($sig.SignerCertificate) { $signer = $sig.SignerCertificate.GetNameInfo('SimpleName', $false) }
+                    } catch { $status = 'Unknown' }
+                }
                 $files += [pscustomobject]@{
                     Path    = $f.FullName
                     Created = $f.CreationTime.ToString('yyyy-MM-dd HH:mm')
@@ -286,15 +332,13 @@ function Get-CfaEvidence {
         $events = @(Get-WinEvent -FilterHashtable @{ LogName = 'Application'; ProviderName = 'MsiInstaller'; Id = 1033; StartTime = $since } -ErrorAction Stop)
         $installs = @()
         foreach ($e in $events) {
-            $msg = [string]$e.Message
-            $name = ''; $maker = ''
-            if ($msg -match 'Product Name:\s*(.*?)\.\s*Product Version') { $name = $Matches[1] }
-            if ($msg -match 'Manufacturer:\s*(.*?)\.\s*Installation') { $maker = $Matches[1] }
-            $installs += [pscustomobject]@{ Name = $name; Manufacturer = $maker; Time = $e.TimeCreated.ToString('yyyy-MM-dd HH:mm') }
+            $values = @($e.Properties | ForEach-Object { $_.Value })
+            $m = ConvertFrom-CfaMsiEvent -Values $values -Time $e.TimeCreated
+            if ($m.Succeeded) { $installs += $m }
         }
         $ev.MsiInstalls = $installs
     } catch {
-        if ($_.Exception.Message -notmatch 'No events were found') { $ev.Errors += "Installer log: $($_.Exception.Message)" }
+        if ([string]$_.FullyQualifiedErrorId -notlike 'NoMatchingEventsFound*') { $ev.Errors += "Installer log: $($_.Exception.Message)" }
     }
 
     # 6. Things that start automatically.
@@ -309,26 +353,29 @@ function Get-CfaEvidence {
             if (-not (Test-Path -LiteralPath $k)) { continue }
             $p = Get-ItemProperty -LiteralPath $k
             foreach ($prop in $p.PSObject.Properties) {
-                if ($prop.Name -like 'PS*') { continue }
+                if (@('PSPath', 'PSParentPath', 'PSChildName', 'PSDrive', 'PSProvider') -contains $prop.Name) { continue }
                 $auto += [pscustomobject]@{ Where = ($k -replace '^HK(CU|LM):\\Software\\', 'HK$1 '); Name = $prop.Name; Command = [string]$prop.Value }
             }
         } catch { $ev.Errors += "Startup entries ($k): $($_.Exception.Message)" }
     }
-    try {
-        $shell = New-Object -ComObject WScript.Shell
-        foreach ($folder in @([Environment]::GetFolderPath('Startup'), [Environment]::GetFolderPath('CommonStartup'))) {
+    $shell = $null
+    try { $shell = New-Object -ComObject WScript.Shell -ErrorAction Stop } catch { $shell = $null }
+    foreach ($folder in @([Environment]::GetFolderPath('Startup'), [Environment]::GetFolderPath('CommonStartup'))) {
+        try {
             if (-not $folder -or -not (Test-Path -LiteralPath $folder)) { continue }
             foreach ($f in @(Get-ChildItem -LiteralPath $folder -File -Force -ErrorAction SilentlyContinue)) {
                 if ($f.Name -eq 'desktop.ini') { continue }
                 $cmd = $f.FullName
-                if ($f.Extension -eq '.lnk') {
-                    $lnk = $shell.CreateShortcut($f.FullName)
-                    $cmd = ('{0} {1}' -f $lnk.TargetPath, $lnk.Arguments).Trim()
+                if ($f.Extension -eq '.lnk' -and $shell) {
+                    try {
+                        $lnk = $shell.CreateShortcut($f.FullName)
+                        $cmd = ('{0} {1}' -f $lnk.TargetPath, $lnk.Arguments).Trim()
+                    } catch { $cmd = $f.FullName }
                 }
                 $auto += [pscustomobject]@{ Where = 'Startup folder'; Name = $f.Name; Command = $cmd }
             }
-        }
-    } catch { $ev.Errors += "Startup folders: $($_.Exception.Message)" }
+        } catch { $ev.Errors += "Startup folder ($folder): $($_.Exception.Message)" }
+    }
     try {
         foreach ($t in @(Get-ScheduledTask -ErrorAction Stop)) {
             foreach ($a in @($t.Actions)) {
@@ -369,7 +416,7 @@ function Invoke-CfaAnalysis {
             if (-not $item) { continue }
             $r = Test-CfaCommand -Detector $Detector -Text ([string]$item)
             if ($r.Verdict -eq 'block') { & $addFinding 'danger' $src.Area $src.Title $item $r.Reasons }
-            elseif ($r.Verdict -eq 'warn') { & $addFinding 'review' $src.Area 'A command downloads and runs something. Check that you ran it on purpose' $item $r.Reasons }
+            elseif ($r.Verdict -eq 'hold') { & $addFinding 'review' $src.Area 'A command downloads and runs something. Check that you ran it on purpose' $item $r.Reasons }
         }
     }
 
@@ -379,7 +426,7 @@ function Invoke-CfaAnalysis {
         $label = '{0}: {1}' -f $a.Where, $a.Name
         if ($r.Verdict -eq 'block') {
             & $addFinding 'danger' 'Starts automatically' "This runs every time Windows starts and looks like malware ($label)" $a.Command $r.Reasons
-        } elseif ($r.Verdict -eq 'warn' -or ([string]$a.Command -match '\\(Temp|AppData\\Roaming)\\' -and [string]$a.Command -match '\b(wscript|cscript|mshta|powershell|cmd|rundll32|regsvr32)\b')) {
+        } elseif ($r.Verdict -eq 'hold' -or ([string]$a.Command -match '\\(Temp|AppData\\Roaming)\\' -and [string]$a.Command -match '\b(wscript|cscript|mshta|powershell|cmd|rundll32|regsvr32)\b')) {
             $why = @($r.Reasons)
             if (-not $why.Count) { $why = @('Starts a script from a temporary or app-data folder') }
             & $addFinding 'review' 'Starts automatically' "Check that you recognize this ($label)" $a.Command $why

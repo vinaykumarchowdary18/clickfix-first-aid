@@ -54,17 +54,22 @@ Every pattern in the rules file is a **regular expression** (a text-matching pat
 
 Before matching, the engine **undoes simple disguises**: `c^m^d` becomes `cmd`, ``p`o`wershell`` becomes `powershell`, `'pow'+'ershell'` becomes `powershell`.
 
-Then it decides:
+Then it decides, giving one of three verdicts:
 
-1. Not starting any program? **Allow.** (Normal text, links, `npm install`.)
-2. Has a decoy comment? **Block.** Real tools never do this.
-3. The page says "Win+R ... paste"? **Block** any command.
-4. Starts a program, reaches the internet, and stealth weight is 25 or more? **Block.**
-5. Starts a program and reaches the internet, nothing sneaky, but the copy came from **inside a frame** embedded in the page? **Block.** Trap pages often hide the fake checkbox in a frame, where it cannot see the "Win+R" text in the outer page.
-6. Starts a program and reaches the internet, nothing sneaky? **Gentle warning only.** This is how real developer installers look, for example `irm https://get.scoop.sh | iex`.
-7. No internet seen, but stealth weight is 50 or more? **Block.**
+- **block**: clearly an attack. The clipboard gets a harmless "STOP" message and a full warning covers the page.
+- **hold**: downloads and runs a program, which is also exactly how real installers look. If the page's own code copied it, the clipboard gets a harmless "PAUSED" message and a small panel offers **Copy anyway** and **Always allow on this site**. If you selected it and pressed Ctrl+C yourself, nothing happens.
+- **allow**: everything else.
 
-For rule 3, the extension first reads the page's visible text. If that looks innocent, it also reads hidden text, because many trap pages copy the command first and only then un-hide their "Win+R, Ctrl+V" steps.
+The rules, in order:
+
+1. Has a fake "I am not a robot" comment after a real command? **Block.** Real tools never do this. (Only CAPTCHA wording counts, like "robot", "Verification ID" or "Ray ID". Ordinary comments like `# verify tests` do not.)
+2. The page you can see says "verify you are human", "Win+R" and "paste"? **Block** any command or web address.
+3. Starts a program, reaches the internet, and stealth weight is 25 or more? **Block.**
+4. Starts a program and stealth weight is 50 or more, even with no download seen? **Block.**
+5. Starts a program and reaches the internet, nothing sneaky? **Hold.** If the page mentions Win+R and paste without the "verify" part (like a normal tutorial), or the copy came from an embedded frame, the panel says so.
+6. Otherwise: **allow.**
+
+A long script (more than five lines that actually do something) is held instead of blocked, because long legitimate scripts exist. Comment lines and empty lines do not count, so an attacker cannot pad a command with `#` lines to soften it.
 
 ### Worked example: the command shape from the incident
 
@@ -92,44 +97,59 @@ The `# I am not a robot ...` part is the decoy. In the Run box, only the end of 
 An extension can inject scripts into web pages. Chrome runs them in one of two **worlds**:
 
 - **MAIN world**: the same JavaScript world as the page. We need this to wrap the page's clipboard functions *before* the page uses them. Downside: the page can see and tamper with things here.
-- **ISOLATED world**: the extension's private world. The page cannot touch it. Used for checking and drawing warnings.
+- **ISOLATED world**: the extension's private world. The page cannot touch it. Used for reading the page safely and drawing warnings.
 
 `run_at: document_start` makes our scripts run before the page's own scripts.
 
-### The four ways a page can copy, and how each is guarded (`page-hook.js`)
+### The five ways a page can copy, and how each is guarded (`page-hook.js`)
 
 1. `navigator.clipboard.writeText(text)`: we replace the function. If the text is an attack, we call the real function with the safe message instead.
-2. `navigator.clipboard.write([ClipboardItem])`: same idea, after reading the text out of the item.
-3. `document.execCommand('copy')` on a hidden text box: we note that the page started the copy, and our `copy` event listener checks the selected text.
+2. `navigator.clipboard.write([ClipboardItem])`: we call the browser straight away with a new item whose text is checked before it is handed over.
+3. `document.execCommand('copy')` on a hidden text box: we note that the page started the copy, and our `copy` listener checks the selected text.
 4. A page `copy` handler calling `event.clipboardData.setData(...)`: we wrap `setData`.
+5. A page `copy` handler calling `event.clipboardData.items.add(text, 'text/plain')`: we wrap `add` too, and take a final look at the end of every copy event.
 
-**Tamper protection:** a hostile page could replace built-in functions like `RegExp.prototype.exec` to make our checks always say "fine". So both the guard and the engine **grab the built-ins they need the moment they load**, before any page script runs, and only use those copies. There is a test for this.
+### Tamper protection: the lessons from the security review
 
-### The safe message
+A hostile page shares the MAIN world with our guard, so it can try to break it. The review found three real tricks, and each one taught a rule:
 
-The clipboard gets this instead of the attack:
+- **Give a different answer the second time.** A page passed an object whose `toString()` returned "hello" the first time and the attack the second time. Our check saw "hello", the browser wrote the attack. *Rule: convert the input to text once, then check and write that same string.*
+- **Poison the built-ins.** `Object.defineProperty(Array.prototype, '0', { set() {} })` makes `list[0] = x` silently do nothing, so every list of matches stayed empty and the verdict became "allow". *Rule: the engine never writes into ordinary arrays or objects at run time. It uses `defineProperty` and objects with no prototype, and grabs every built-in function the moment it loads.* While fixing this we found one more: `String.replace` secretly calls `RegExp.prototype.exec`, which a page can replace. So the disguise-removal step is now a plain character loop.
+- **Use a path you did not wrap.** `clipboardData.items.add()` writes text without calling `setData`. *Rule: list every way in, and add a final check at the end.*
+
+### Pause, then let the person decide
+
+Blocking every installer would break developer sites. Letting them through silently is what an attacker wants. So a download-and-run command copied by a page's own code is **paused**: the clipboard gets this harmless message instead:
 
 ```
-# STOP. ClickFix First Aid blocked this. A website tried to trick you into running a command on your computer. Close that page. Real human checks never ask you to paste anything.
+# PAUSED. ClickFix First Aid held this copied command because it downloads and runs a program. Go back to the page and choose Copy anyway only if you trust the site.
 ```
 
-It starts with `#`, which makes PowerShell and Mac/Linux shells treat the whole line as a comment, so nothing runs. In the Run box or File Explorer it simply fails to open. It deliberately contains no quotes, `|`, `&`, `$` or `>`, which shells could act on.
+The panel's **Copy anyway** button runs in the extension's isolated world, which has its own untouched copy of the clipboard functions, so it can write the original command without our own guard stopping it.
 
-### Why the page cannot fake our warning
+### The safe messages
 
-The guard sends a report to the isolated world with only the raw text. The isolated world (`content.js`) **runs the detection again itself** and builds the reasons from its own trusted rules. So a page cannot make us show a scary message with its own wording, for example a fake "call this support number" scam.
+Both the STOP and PAUSED messages start with `#`, which makes PowerShell and bash treat the whole line as a comment. In the Run box, cmd, File Explorer or the Mac's zsh they simply fail with "not found". They contain no quotes, `|`, `&`, `$` or `>`, which a shell could act on.
 
-Warnings are drawn inside a **closed shadow root** (`ui.js`): a private piece of the page that the page's scripts cannot read, restyle or click. All text is inserted as plain text, never as HTML.
+### A private line to the extension
 
-### Trap pages and iframes
+In v0.1 the guard sent its reports as a normal page event. The review showed a page could listen to that event, stop it so no warning appeared, or send fake ones with its own text, like a fake "call support" number. Now:
 
-`content.js` also reads the page's visible text and looks for the trap pattern: a run shortcut (Win+R, Win+X, File Explorer address bar, Cmd+Space) **and** "paste" **and** a "verify / CAPTCHA / fix the error" theme. If all three appear, a red banner warns you even before anything is copied. Trap pages often reveal their steps only after the click, so it re-checks when the page changes.
+1. The guard creates an element with a **closed** shadow root and puts a small node inside it. A closed shadow root cannot be opened by page scripts.
+2. The extension's isolated world opens it with `chrome.dom.openOrClosedShadowRoot`, a function only extensions have, starts listening on the node, and removes the element from the page.
+3. Reports travel as events on that node, which the page has no way to reach.
 
-Many traps put the checkbox inside an **iframe** (a page inside a page). The background script relays the warning to the top of the tab so it covers the whole screen.
+Warnings are also drawn inside a closed shadow root (`ui.js`), all text is inserted as plain text, and text from the page has links broken and phone numbers removed.
+
+### Reading the page, and connecting the dots
+
+`content.js` reads the page text in every frame, including closed shadow roots and text added with CSS (`::before` / `::after`), and looks for the trap pattern: a run shortcut (Win+R, Win+X, File Explorer address bar, Cmd+Space) **and** "paste" **and** a "verify / CAPTCHA / fix the error" theme. Only text you can see can trigger a block. Hidden text can only lead to a pause, because hidden text on normal sites (data blobs, menus) often mentions "Ctrl+V".
+
+The background (`background.js`) then connects the dots within a tab: a paused copy plus trap instructions anywhere in the tab, in any frame, before the copy or within 20 seconds after it, becomes a full block warning. This catches traps that hide their steps in another frame or only show them after the copy.
 
 ### Permissions
 
-Only `storage` (for the counters in the popup) and the right to run on pages. No network access at all, so nothing can be sent anywhere.
+Only `storage` (counters, settings, allowed sites) and the right to run on pages. No network access at all, so nothing can be sent anywhere.
 
 ## 5. Part 2: the PC check (`Check-ClickFix.ps1`)
 
@@ -171,13 +191,14 @@ Every menu path in it was checked against the official help pages of Google, Mic
 
 | Command | What it checks |
 |---|---|
-| `npm test` | 33 engine tests: 11 attack shapes are blocked, 10 normal things are allowed, 3 developer installers only get a note, page detection, frames, tamper resistance. |
-| `npm run test:ps` | 56 PowerShell tests: the checker makes the **same decisions** as the JavaScript engine on every shared sample, whole-PC analysis with fake evidence, the Win+R helper, scripts parse and are pure ASCII. |
-| `npm run test:e2e` | 15 tests that load the real extension into Chromium and click through harmless fake trap pages: all four copy methods, iframes, steps revealed late, the public demo, no false alarms on normal pages. |
+| `npm test` | 69 engine tests: 26 attack shapes are blocked, 21 normal things are allowed, 11 installers are held, page detection in several phrasings and languages, frames, and tamper resistance. |
+| `npm run test:ps` | 111 PowerShell tests: the checker makes the **same decisions** as the JavaScript engine on all 58 shared samples, whole-PC analysis with fake evidence, installer-log fields, the Win+R helper, and scripts parse and are pure ASCII. |
+| `npm run test:e2e` | 43 tests that load the real extension into Chromium: all five copy methods, frames, late or hidden steps, Copy anyway, Always allow, copying by hand, a page hijacking a hand copy, and the 24 proof-of-concept pages from the security review. |
 
-Two good habits we used:
+Three good habits we used:
 - **Control run.** Run the same trap pages with the extension *switched off* and confirm the attack text really lands on the clipboard. Otherwise a test can pass for the wrong reason.
-- **Test first for a gap.** When a weakness was spotted (a plain command copied from a frame, or copied before the steps appeared), we first wrote a test page for it and watched the test **fail**, then fixed the code and watched it pass.
+- **Test first for a gap.** When a weakness was spotted, we first wrote a test for it and watched it **fail**, then fixed the code and watched it pass.
+- **Get an outside review, then verify it.** The Perplexity review was mostly right, but not completely. One suggested correction to the recovery guide (the Defender scan's name and duration) did not match Microsoft's own documentation, so it was not applied. Treat reviews like any other source: check them.
 
 ## 9. Ideas for next versions (good places to contribute)
 
@@ -198,5 +219,8 @@ Two good habits we used:
 - **LOLBin** ("living off the land" binary): a normal Windows program (like `mshta` or `certutil`) abused by attackers, so no new malware tool is needed at first.
 - **Obfuscation**: disguising text so security tools do not recognize it, like `c^m^d`.
 - **Defang**: breaking a dangerous link so it cannot be clicked, like `hxxps[://]`.
+- **Closed shadow root**: a sealed part of a page that page scripts cannot open. Extensions can, with `chrome.dom.openOrClosedShadowRoot`.
+- **Prototype poisoning**: changing a built-in like `Array.prototype` so that ordinary code quietly misbehaves.
+- **TOCTOU** ("time of check, time of use"): checking one value and then using a different one.
 - **Regular expression**: a pattern for matching text.
 - **Shadow root**: a private, sealed part of a web page.

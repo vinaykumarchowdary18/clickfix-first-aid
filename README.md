@@ -16,9 +16,13 @@ ClickFix First Aid has three parts:
 
 | | Part | What it does |
 |---|---|---|
-| **Stop it** | Browser extension (Chrome, Edge) | Catches the moment a page puts an attack command on your clipboard, swaps it for a harmless message, and shows a clear warning. Also flags pages whose text tells you to press Win+R and paste. |
+| **Stop it** | Browser extension (Chrome, Edge) | Catches the moment a page puts an attack command on your clipboard, swaps it for a harmless message, and shows a clear warning. Commands that download and run a program are paused so you can choose **Copy anyway**. Also flags pages whose text tells you to press Win+R and paste. |
 | **Check it** | `Check-ClickFix.ps1` | A read-only Windows check of your Run box history, File Explorer address bar history, PowerShell history, new programs and startup items. |
 | **Fix it** | [Recovery guide](guide/recovery.html) | The exact steps, in the right order, after you ran something: cut off stolen sign-ins from your phone first, then clean the PC. Bundled inside the extension so it works offline. |
+
+When a page's code copies a command that downloads and runs a program (which is also how real installers look), it is paused instead, and you decide:
+
+![The pause panel with Copy anyway](assets/screenshots/paused.png)
 
 Plus an optional switch, `Protect-RunDialog.ps1`, that turns off the Win+R and Win+X shortcuts for people who never use them.
 
@@ -61,9 +65,10 @@ Run `Protect-RunDialog.ps1` the same way and pick option 1. It adds `R` and `X` 
 The short version (the long, beginner-friendly version is in [LEARN.md](LEARN.md)):
 
 - **One set of rules, two engines.** [`rules/clickfix-rules.json`](rules/clickfix-rules.json) describes what an attack command looks like. The JavaScript engine ([`engine/detector.js`](engine/detector.js)) and the PowerShell checker use the same file, and the test suites check they agree on every shared sample.
-- **Commands are judged on several signals:** does it start a program (PowerShell, cmd, mshta, msiexec...), does it reach the internet, is it encoded or disguised (hidden window, `^` tricks, Base64), and does it hide fake "I am not a robot" text after the real command. Developer one-liners like `irm https://get.scoop.sh | iex` only get a gentle note. Disguised ones, or any command on a page that says "Win+R, paste", get blocked.
-- **The extension guards all four ways a page can write to the clipboard** (`clipboard.writeText`, `clipboard.write`, `execCommand('copy')` and `copy` events), from inside the page, before the page's own scripts run.
-- **Warnings cannot be faked by the page.** The extension re-checks every report in its own isolated world, and draws its UI in a closed shadow root that the page cannot read or click.
+- **Three verdicts.** *Block*: clearly an attack (fake "I am not a robot" text hidden after a command, heavy disguise, or any command on a page that says "verify you are human, press Win+R, paste"). The clipboard gets a harmless "STOP" message and a full warning. *Hold*: a command that downloads and runs a program, which is also how real installers look. When a page's own code copies one, the clipboard gets a harmless "PAUSED" message and you can choose **Copy anyway** or **Always allow on this site**. Copies you make by hand are not paused. *Allow*: everything else.
+- **The extension guards all five ways a page can write to the clipboard** (`clipboard.writeText`, `clipboard.write`, `execCommand('copy')`, `clipboardData.setData` and `clipboardData.items.add`), from inside the page, before the page's own scripts run, with built-in functions captured so the page cannot tamper with the checks.
+- **Warnings cannot be faked or silenced by the page.** The guard reports through a node inside a closed shadow root that the page cannot reach, and warnings are drawn in a closed shadow root the page cannot read or click.
+- **It connects the dots.** A paused copy plus trap instructions anywhere in the tab, in any frame, before or shortly after the copy, becomes a full block warning.
 
 ## Privacy and permissions
 
@@ -72,10 +77,17 @@ The short version (the long, beginner-friendly version is in [LEARN.md](LEARN.md
 
 ## Limitations (honest list)
 
-- A determined page can sometimes slip past browser-side guards (for example by grabbing a fresh copy of the clipboard functions from a new frame before the extension loads there). That is why the kit also has the Win+R switch and the PC check.
-- Detection is pattern-based. New disguises may need new rules. Please report them (see [SECURITY.md](SECURITY.md)).
-- If you copy an attack sample by hand from a security blog, it gets blocked too. Click **Dismiss**.
-- The PC check is Windows-only for now.
+- **Browser-side guards are a cat-and-mouse game.** A determined page may find new ways to reach the clipboard or to detect the extension (for example by calling `Function.prototype.toString` from a fresh frame). That is why the kit also has the Win+R switch and the PC check.
+- **Detection is pattern-based.** New disguises may need new rules. Please report them (see [SECURITY.md](SECURITY.md)).
+- **It cannot see what you type.** A page that only shows a command and asks you to type it by hand is caught only by the trap-page banner, and only if its wording matches.
+- **Copying an attack sample from a security blog gets blocked too.** Click **Dismiss**.
+- **The Win+R switch only stops the Win+R / Win+X trick.** It does not stop someone typing "powershell" in the Start menu or pasting into the File Explorer address bar (FileFix). It uses the `DisabledHotkeys` setting, which is widely used but not formally documented by Microsoft.
+- **The PC check is Windows-only for now,** and has not yet been run on many real PCs. Its tests run on PowerShell 7; CI also runs them on Windows PowerShell 5.1.
+- **A trap that opens a new pop-up window** shows its warning in that window.
+
+## Independent review
+
+Version 0.1.0 was reviewed before release with Perplexity, which reported 11 bypasses, 7 false-positive problems, 4 UI issues, 7 PowerShell issues and 10 guide corrections, with harmless proof-of-concept pages. v0.2.0 fixes them; see [CHANGELOG.md](CHANGELOG.md). The proof-of-concept pages now run in the test suite on every change.
 
 ## Development
 
@@ -87,7 +99,7 @@ npm run test:e2e     # loads the extension into Chromium against fake trap pages
 npm run package      # builds release files into dist/
 ```
 
-All "malicious" test samples use reserved, non-routable hosts (`example.invalid`, `*.example`, `203.0.113.0/24`) and the fake trap pages only copy a harmless `echo` command.
+Current results: 69 engine tests, 111 PowerShell tests and 43 browser tests. All "malicious" test samples use reserved, non-routable hosts (`example.invalid`, `*.example`, `203.0.113.0/24`) and the fake trap pages only copy a harmless `echo` command.
 
 Ideas and contributions are welcome, especially new attack samples, translations of the warnings, Firefox support and a Mac version of the checker. See [CONTRIBUTING.md](CONTRIBUTING.md).
 

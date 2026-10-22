@@ -18,7 +18,7 @@
   <section class="stats" aria-label="What has been caught">
     <div><strong id="blocked">0</strong><span>attacks blocked</span></div>
     <div><strong id="lures">0</strong><span>trap pages spotted</span></div>
-    <div><strong id="warned">0</strong><span>gentle warnings</span></div>
+    <div><strong id="held">0</strong><span>copies paused</span></div>
   </section>
 
   <section>
@@ -33,7 +33,11 @@
   </section>
 
   <section class="settings">
-    <label><input id="soft" type="checkbox" checked> Show gentle warnings for installer commands</label>
+    <label><input id="hold" type="checkbox" checked> Pause copied commands that download and run programs, so I can check them first (recommended)</label>
+    <div id="allowed-wrap" hidden>
+      <h2>Sites you allowed</h2>
+      <ul id="allowed"></ul>
+    </div>
     <button id="clear" class="quiet" type="button">Clear history</button>
   </section>
 

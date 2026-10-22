@@ -57,7 +57,7 @@ __CFA_RULES_JSON__
 
 function New-CfaDetector {
     param([Parameter(Mandatory = $true)] $Rules)
-    $opts = [System.Text.RegularExpressions.RegexOptions]::IgnoreCase
+    $opts = [System.Text.RegularExpressions.RegexOptions]::IgnoreCase -bor [System.Text.RegularExpressions.RegexOptions]::CultureInvariant
     $compile = {
         param($list)
         $out = New-Object System.Collections.ArrayList
@@ -108,6 +108,21 @@ function Get-CfaMatches {
     return , $found
 }
 
+function ConvertTo-CfaUnified {
+    # Curly quotes and Unicode dashes become plain ' " and - (PowerShell accepts both).
+    param([string]$Text)
+    $s = $Text -replace '[\u2010-\u2015\u2212]', '-'
+    $s = $s -replace '[\u2018\u2019\u201a\u201b]', "'"
+    $s = $s -replace '[\u201c\u201d\u201e\u201f]', '"'
+    return $s
+}
+
+function Get-CfaCodeLineCount {
+    # Lines that do something: not empty and not comments (#, ::, rem).
+    param([string]$Text)
+    return @($Text -split "\r\n|\r|\n" | Where-Object { $_ -match '\S' -and $_ -notmatch '^\s*(#|::|rem\b)' }).Count
+}
+
 function ConvertTo-CfaNormalized {
     # Undo simple disguises: c^m^d, p`ow`ershell, 'pow'+'ershell', p""owershell
     param([string]$Text)
@@ -119,25 +134,29 @@ function ConvertTo-CfaNormalized {
 }
 
 function Test-CfaCommand {
+    # Same decisions as engine/detector.js, without the web-page part.
+    # Verdicts: block (attack), hold (downloads and runs something), allow.
     param([Parameter(Mandatory = $true)] $Detector, [AllowEmptyString()][string]$Text)
     $raw = [string]$Text
     if ($raw.Length -gt $Detector.MaxChars) { $raw = $raw.Substring(0, $Detector.MaxChars) }
-    $norm = ConvertTo-CfaNormalized $raw
-    $lines = @($raw -split "\r\n|\r|\n" | Where-Object { $_ -match '\S' }).Count
+    $uni = ConvertTo-CfaUnified $raw
+    $norm = ConvertTo-CfaNormalized $uni
+    $lines = Get-CfaCodeLineCount $raw
 
     $exec = Get-CfaMatches $Detector.Executors $norm $null
     $remote = Get-CfaMatches $Detector.Remote $norm $null
-    $encoded = Get-CfaMatches $Detector.Encoded $raw $null
+    $encoded = Get-CfaMatches $Detector.Encoded $uni $null
     $seen = @{}
     $stealth = New-Object System.Collections.ArrayList
-    foreach ($m in (Get-CfaMatches $Detector.Stealth $raw $seen)) { [void]$stealth.Add($m) }
+    foreach ($m in (Get-CfaMatches $Detector.Stealth $uni $seen)) { [void]$stealth.Add($m) }
     foreach ($m in (Get-CfaMatches $Detector.Stealth $norm $seen)) { [void]$stealth.Add($m) }
-    $decoys = Get-CfaMatches $Detector.Decoys $raw $null
+    $decoys = Get-CfaMatches $Detector.Decoys $uni $null
 
     $score = 0
     foreach ($m in $stealth) { $score += $m.Weight }
     $hasExec = $exec.Count -gt 0
     $danger = $hasExec -and ($remote.Count -gt 0 -or $encoded.Count -gt 0)
+    $long = $lines -gt $Detector.MaxLines
 
     $why = New-Object System.Collections.ArrayList
     foreach ($m in @($exec | Select-Object -First 2)) { [void]$why.Add($m.Label) }
@@ -146,22 +165,23 @@ function Test-CfaCommand {
 
     $reasons = New-Object System.Collections.ArrayList
     $add = { param($items) foreach ($i in $items) { if (-not $reasons.Contains($i)) { [void]$reasons.Add($i) } } }
+    $stealthLabels = @($stealth | ForEach-Object { $_.Label })
     $verdict = 'allow'; $rule = ''
 
     if ($hasExec) {
         if ($decoys.Count -gt 0) {
-            & $add @($decoys | ForEach-Object { $_.Label }); & $add $why; & $add @($stealth | ForEach-Object { $_.Label })
+            & $add @($decoys | ForEach-Object { $_.Label }); & $add $why; & $add $stealthLabels
             $verdict = 'block'; $rule = 'decoy'
         } elseif ($danger -and $score -ge $Detector.BlockAt) {
-            & $add $why; & $add @($stealth | ForEach-Object { $_.Label })
-            if ($lines -gt $Detector.MaxLines) { $verdict = 'warn'; $rule = 'stealthy-but-long' }
-            else { $verdict = 'block'; $rule = 'stealthy-download-and-run' }
+            & $add $why; & $add $stealthLabels
+            if ($long) { $verdict = 'hold'; $rule = 'stealthy-long-script' } else { $verdict = 'block'; $rule = 'stealthy-download-and-run' }
+        } elseif ($score -ge $Detector.StealthOnlyAt) {
+            & $add $why; & $add $stealthLabels
+            if ($long) { $verdict = 'hold' } else { $verdict = 'block' }
+            $rule = 'heavily-disguised'
         } elseif ($danger) {
-            & $add $why; & $add @($stealth | ForEach-Object { $_.Label })
-            $verdict = 'warn'; $rule = 'download-and-run'
-        } elseif ($score -ge $Detector.StealthOnlyAt -and $lines -le $Detector.MaxLines) {
-            & $add $why; & $add @($stealth | ForEach-Object { $_.Label })
-            $verdict = 'block'; $rule = 'heavily-disguised'
+            & $add $why; & $add $stealthLabels
+            $verdict = 'hold'; $rule = 'download-and-run'
         }
     }
 
@@ -178,6 +198,22 @@ function Get-CfaDefanged {
     $s = [string]$Text
     if ($s.Length -gt $Max) { $s = $s.Substring(0, $Max) + ' ...' }
     return ($s -replace '\b(h)(tt)(ps?)://', '$1xx$3[://]')
+}
+
+function ConvertFrom-CfaMsiEvent {
+    # Event 1033 fields (Microsoft "Event Logging" docs): 1 ProductName,
+    # 2 ProductVersion, 3 ProductLanguage, 4 status (0 = success), 5 Manufacturer.
+    param([object[]]$Values, [datetime]$Time)
+    $v = @($Values)
+    $get = { param($i) if ($v.Count -gt $i -and $null -ne $v[$i]) { [string]$v[$i] } else { '' } }
+    $status = & $get 3
+    return [pscustomobject]@{
+        Name         = & $get 0
+        Version      = & $get 1
+        Manufacturer = & $get 4
+        Succeeded    = ($status -eq '0' -or $status -eq '')
+        Time         = $Time.ToString('yyyy-MM-dd HH:mm')
+    }
 }
 
 function Test-CfaRandomName {
@@ -254,21 +290,31 @@ function Get-CfaEvidence {
 
     # 4. Programs and scripts created recently in temporary / app-data folders.
     try {
-        $exts = @('.exe', '.msi', '.hta', '.ps1', '.vbs', '.vbe', '.js', '.jse', '.bat', '.cmd', '.scr', '.com', '.pif')
+        $exts = @('.exe', '.msi', '.hta', '.ps1', '.vbs', '.vbe', '.js', '.jse', '.wsf', '.bat', '.cmd', '.scr', '.com', '.pif', '.cpl', '.msc')
         $roots = @($env:TEMP, $env:APPDATA, $env:LOCALAPPDATA, $env:PUBLIC, $env:ProgramData) | Where-Object { $_ } | Select-Object -Unique
+        $seenPaths = @{}
         $files = @()
         foreach ($root in $roots) {
             if (-not (Test-Path -LiteralPath $root)) { continue }
-            $depth = 1
-            foreach ($f in @(Get-ChildItem -LiteralPath $root -File -Recurse -Depth $depth -Force -ErrorAction SilentlyContinue)) {
-                if ($exts -notcontains $f.Extension.ToLowerInvariant()) { continue }
+            $isTemp = ($env:TEMP -and $root -eq $env:TEMP)
+            foreach ($f in @(Get-ChildItem -LiteralPath $root -File -Recurse -Depth 2 -Force -ErrorAction SilentlyContinue)) {
+                $ext = $f.Extension.ToLowerInvariant()
+                # DLLs only in Temp: elsewhere in AppData, apps update them all the time.
+                if ($exts -notcontains $ext -and -not ($isTemp -and $ext -eq '.dll')) { continue }
                 if ($f.CreationTime -lt $since) { continue }
+                if ($f.FullName -like '*\Microsoft\Windows\Recent\*') { continue }
+                if ($seenPaths.ContainsKey($f.FullName)) { continue }
+                $seenPaths[$f.FullName] = $true
                 $signer = ''; $status = 'NotSigned'
-                try {
-                    $sig = Get-AuthenticodeSignature -LiteralPath $f.FullName -ErrorAction Stop
-                    $status = [string]$sig.Status
-                    if ($sig.SignerCertificate) { $signer = $sig.SignerCertificate.GetNameInfo('SimpleName', $false) }
-                } catch { $status = 'Unknown' }
+                if ($f.Length -gt 200MB) {
+                    $status = 'Unknown'
+                } else {
+                    try {
+                        $sig = Get-AuthenticodeSignature -LiteralPath $f.FullName -ErrorAction Stop
+                        $status = [string]$sig.Status
+                        if ($sig.SignerCertificate) { $signer = $sig.SignerCertificate.GetNameInfo('SimpleName', $false) }
+                    } catch { $status = 'Unknown' }
+                }
                 $files += [pscustomobject]@{
                     Path    = $f.FullName
                     Created = $f.CreationTime.ToString('yyyy-MM-dd HH:mm')
@@ -286,15 +332,13 @@ function Get-CfaEvidence {
         $events = @(Get-WinEvent -FilterHashtable @{ LogName = 'Application'; ProviderName = 'MsiInstaller'; Id = 1033; StartTime = $since } -ErrorAction Stop)
         $installs = @()
         foreach ($e in $events) {
-            $msg = [string]$e.Message
-            $name = ''; $maker = ''
-            if ($msg -match 'Product Name:\s*(.*?)\.\s*Product Version') { $name = $Matches[1] }
-            if ($msg -match 'Manufacturer:\s*(.*?)\.\s*Installation') { $maker = $Matches[1] }
-            $installs += [pscustomobject]@{ Name = $name; Manufacturer = $maker; Time = $e.TimeCreated.ToString('yyyy-MM-dd HH:mm') }
+            $values = @($e.Properties | ForEach-Object { $_.Value })
+            $m = ConvertFrom-CfaMsiEvent -Values $values -Time $e.TimeCreated
+            if ($m.Succeeded) { $installs += $m }
         }
         $ev.MsiInstalls = $installs
     } catch {
-        if ($_.Exception.Message -notmatch 'No events were found') { $ev.Errors += "Installer log: $($_.Exception.Message)" }
+        if ([string]$_.FullyQualifiedErrorId -notlike 'NoMatchingEventsFound*') { $ev.Errors += "Installer log: $($_.Exception.Message)" }
     }
 
     # 6. Things that start automatically.
@@ -309,26 +353,29 @@ function Get-CfaEvidence {
             if (-not (Test-Path -LiteralPath $k)) { continue }
             $p = Get-ItemProperty -LiteralPath $k
             foreach ($prop in $p.PSObject.Properties) {
-                if ($prop.Name -like 'PS*') { continue }
+                if (@('PSPath', 'PSParentPath', 'PSChildName', 'PSDrive', 'PSProvider') -contains $prop.Name) { continue }
                 $auto += [pscustomobject]@{ Where = ($k -replace '^HK(CU|LM):\\Software\\', 'HK$1 '); Name = $prop.Name; Command = [string]$prop.Value }
             }
         } catch { $ev.Errors += "Startup entries ($k): $($_.Exception.Message)" }
     }
-    try {
-        $shell = New-Object -ComObject WScript.Shell
-        foreach ($folder in @([Environment]::GetFolderPath('Startup'), [Environment]::GetFolderPath('CommonStartup'))) {
+    $shell = $null
+    try { $shell = New-Object -ComObject WScript.Shell -ErrorAction Stop } catch { $shell = $null }
+    foreach ($folder in @([Environment]::GetFolderPath('Startup'), [Environment]::GetFolderPath('CommonStartup'))) {
+        try {
             if (-not $folder -or -not (Test-Path -LiteralPath $folder)) { continue }
             foreach ($f in @(Get-ChildItem -LiteralPath $folder -File -Force -ErrorAction SilentlyContinue)) {
                 if ($f.Name -eq 'desktop.ini') { continue }
                 $cmd = $f.FullName
-                if ($f.Extension -eq '.lnk') {
-                    $lnk = $shell.CreateShortcut($f.FullName)
-                    $cmd = ('{0} {1}' -f $lnk.TargetPath, $lnk.Arguments).Trim()
+                if ($f.Extension -eq '.lnk' -and $shell) {
+                    try {
+                        $lnk = $shell.CreateShortcut($f.FullName)
+                        $cmd = ('{0} {1}' -f $lnk.TargetPath, $lnk.Arguments).Trim()
+                    } catch { $cmd = $f.FullName }
                 }
                 $auto += [pscustomobject]@{ Where = 'Startup folder'; Name = $f.Name; Command = $cmd }
             }
-        }
-    } catch { $ev.Errors += "Startup folders: $($_.Exception.Message)" }
+        } catch { $ev.Errors += "Startup folder ($folder): $($_.Exception.Message)" }
+    }
     try {
         foreach ($t in @(Get-ScheduledTask -ErrorAction Stop)) {
             foreach ($a in @($t.Actions)) {
@@ -369,7 +416,7 @@ function Invoke-CfaAnalysis {
             if (-not $item) { continue }
             $r = Test-CfaCommand -Detector $Detector -Text ([string]$item)
             if ($r.Verdict -eq 'block') { & $addFinding 'danger' $src.Area $src.Title $item $r.Reasons }
-            elseif ($r.Verdict -eq 'warn') { & $addFinding 'review' $src.Area 'A command downloads and runs something. Check that you ran it on purpose' $item $r.Reasons }
+            elseif ($r.Verdict -eq 'hold') { & $addFinding 'review' $src.Area 'A command downloads and runs something. Check that you ran it on purpose' $item $r.Reasons }
         }
     }
 
@@ -379,7 +426,7 @@ function Invoke-CfaAnalysis {
         $label = '{0}: {1}' -f $a.Where, $a.Name
         if ($r.Verdict -eq 'block') {
             & $addFinding 'danger' 'Starts automatically' "This runs every time Windows starts and looks like malware ($label)" $a.Command $r.Reasons
-        } elseif ($r.Verdict -eq 'warn' -or ([string]$a.Command -match '\\(Temp|AppData\\Roaming)\\' -and [string]$a.Command -match '\b(wscript|cscript|mshta|powershell|cmd|rundll32|regsvr32)\b')) {
+        } elseif ($r.Verdict -eq 'hold' -or ([string]$a.Command -match '\\(Temp|AppData\\Roaming)\\' -and [string]$a.Command -match '\b(wscript|cscript|mshta|powershell|cmd|rundll32|regsvr32)\b')) {
             $why = @($r.Reasons)
             if (-not $why.Count) { $why = @('Starts a script from a temporary or app-data folder') }
             & $addFinding 'review' 'Starts automatically' "Check that you recognize this ($label)" $a.Command $why
