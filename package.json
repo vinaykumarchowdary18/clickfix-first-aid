@@ -1,0 +1,25 @@
+{
+  "name": "clickfix-first-aid",
+  "version": "0.1.0",
+  "description": "Stops ClickFix 'verify you are human' attacks, checks if your PC already ran one, and tells you exactly what to do next.",
+  "private": true,
+  "license": "MIT",
+  "author": "Vinay Kumar Mandadi",
+  "homepage": "",
+  "repository": "",
+  "type": "commonjs",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "check-build": "node scripts/build.mjs --check",
+    "test": "node --test tests/detector.test.mjs",
+    "test:e2e": "node --test tests/e2e.test.mjs",
+    "test:ps": "pwsh -NoLogo -NoProfile -File checker/tests/Run-Tests.ps1",
+    "package": "node scripts/build.mjs --package"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "playwright": "1.56.0"
+  }
+}

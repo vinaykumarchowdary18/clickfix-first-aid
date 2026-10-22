@@ -1,0 +1,14 @@
+<!doctype html><meta charset="utf-8"><title>Trap: copy event</title>
+<script src="_trap.js"></script>
+<h1>Cloudflare human check</h1>
+<button id="robot">Verify</button>
+<script>
+document.addEventListener('copy', (e) => {
+  e.clipboardData.setData('text/plain', TRAP_COMMAND);
+  e.preventDefault();
+});
+document.getElementById('robot').addEventListener('click', () => {
+  document.execCommand('copy');
+  document.title = 'copied';
+});
+</script>

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ClickFix First Aid</title>
+<meta name="description" content="Free, open-source protection against ClickFix fake CAPTCHA attacks: a browser extension that blocks them, a PC check that finds them, and a recovery guide.">
+<link rel="icon" href="icon-128.png">
+<style>
+  :root { --bg:#ffffff; --fg:#0f172a; --muted:#475569; --line:#e2e8f0; --card:#f8fafc; --red:#b91c1c; --red-soft:#fee2e2; --link:#1d4ed8; color-scheme: light dark; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0b1220; --fg:#e2e8f0; --muted:#94a3b8; --line:#1e293b; --card:#111a2e; --red:#f87171; --red-soft:#3b0d0d; --link:#93c5fd; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif; }
+  main { max-width: 860px; margin: 0 auto; padding: 40px 16px 64px; }
+  .brand { display:flex; align-items:center; gap:12px; font-weight:700; }
+  .brand img { width: 40px; height: 40px; }
+  h1 { font-size: clamp(30px, 6vw, 46px); line-height: 1.12; margin: 22px 0 12px; }
+  h2 { font-size: 24px; margin: 44px 0 10px; }
+  h3 { font-size: 18px; margin: 0 0 6px; }
+  .lead { font-size: 19px; color: var(--muted); max-width: 680px; }
+  .grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-top: 22px; }
+  .card { border:1px solid var(--line); background: var(--card); border-radius: 14px; padding: 18px; }
+  .tag { display:inline-block; font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color: var(--red); background: var(--red-soft); border-radius:999px; padding:3px 10px; margin-bottom: 8px; }
+  .cta { display:flex; flex-wrap:wrap; gap:10px; margin-top: 22px; }
+  .btn { display:inline-block; text-decoration:none; font-weight:600; border-radius:10px; padding:11px 18px; border:1px solid var(--line); color: var(--fg); }
+  .btn.primary { background: var(--red); border-color: var(--red); color:#fff; }
+  @media (prefers-color-scheme: dark) { .btn.primary { color:#0b1220; } }
+  ol li, ul li { margin: 6px 0; }
+  code { font: 14px ui-monospace, Consolas, monospace; background: var(--card); border:1px solid var(--line); padding: 1px 6px; border-radius: 6px; }
+  a { color: var(--link); }
+  footer { margin-top: 56px; border-top:1px solid var(--line); padding-top: 14px; color: var(--muted); font-size: 14px; }
+</style>
+</head>
+<body>
+<main>
+  <div class="brand"><img src="icon-128.png" alt=""> ClickFix First Aid</div>
+  <h1>Fake "I am not a robot" pages are stealing accounts. This stops them.</h1>
+  <p class="lead">A ClickFix page pretends to be a CAPTCHA, secretly copies a command, and tells you to press Win+R, paste and press Enter. That one paste installs malware that steals your logins. ClickFix First Aid blocks the trick, checks whether your PC already fell for it, and walks you through recovery.</p>
+  <div class="cta">
+    <a class="btn primary" href="#/releases/latest">Download</a>
+    <a class="btn" href="demo.html">Try the safe demo</a>
+    <a class="btn" href="recovery.html">I already ran something</a>
+  </div>
+
+  <div class="grid">
+    <div class="card"><span class="tag">Stop it</span><h3>Browser extension</h3><p>For Chrome and Edge. When a page tries to put an attack command on your clipboard, it swaps it for a harmless message and shows a clear warning.</p></div>
+    <div class="card"><span class="tag">Check it</span><h3>PC check</h3><p>A read-only Windows script that looks at your Run box, File Explorer and PowerShell history, new programs and startup items for signs of an attack.</p></div>
+    <div class="card"><span class="tag">Fix it</span><h3>Recovery guide</h3><p>The exact steps, in the right order, to cut off stolen sign-ins from your phone and clean your PC.</p></div>
+  </div>
+
+  <h2 id="install">Install the browser extension</h2>
+  <ol>
+    <li>Download <code>clickfix-first-aid-extension-v0.1.0.zip</code> from the <a href="#/releases/latest">latest release</a> and unzip it.</li>
+    <li>Open <code>chrome://extensions</code> (or <code>edge://extensions</code>) and switch on <strong>Developer mode</strong>.</li>
+    <li>Click <strong>Load unpacked</strong> and choose the unzipped folder.</li>
+    <li>Open the <a href="demo.html">safe demo</a> and tick the box. You should see a red warning.</li>
+  </ol>
+
+  <h2 id="check-your-pc">Check your Windows PC</h2>
+  <ol>
+    <li>Download <code>Check-ClickFix.ps1</code> from the <a href="#/releases/latest">latest release</a>.</li>
+    <li>Right-click the file and choose <strong>Run with PowerShell</strong>.</li>
+    <li>Read the result. It only reads your PC. It changes nothing and sends nothing anywhere.</li>
+  </ol>
+  <p><strong>Never</strong> run this, or anything else, by pasting a command a website gave you. That is exactly the trick this project protects you from.</p>
+
+  <h2 id="lock-win-r">Optional: turn off Win+R</h2>
+  <p>If you never use the Win+R shortcut, <code>Protect-RunDialog.ps1</code> turns off Win+R and Win+X for your account, so trap instructions simply do nothing. Run it the same way and pick option 1. Pick option 2 to undo it.</p>
+
+  <h2 id="privacy">Privacy</h2>
+  <ul>
+    <li>The extension has no network access and sends nothing anywhere. Its only permission besides reading pages is local storage, for its own counters.</li>
+    <li>The scripts are read-only, except the Win+R switch, which changes one setting for your user and can be undone.</li>
+    <li>Everything is open source, so anyone can check this.</li>
+  </ul>
+
+  <footer>
+    ClickFix First Aid v0.1.0. Free and open source under the MIT license. <a href="#">Source code</a>.
+  </footer>
+</main>
+</body>
+</html>

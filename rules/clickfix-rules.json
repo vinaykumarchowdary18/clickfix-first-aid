@@ -1,0 +1,315 @@
+{
+  "name": "clickfix-first-aid-rules",
+  "version": "1.0.0",
+  "updated": "2026-10-22",
+  "notes": "Patterns must work in both JavaScript and .NET regex engines. All patterns are matched case-insensitively.",
+  "limits": {
+    "maxChars": 20000,
+    "maxLinesForAutoBlock": 5
+  },
+  "command": {
+    "executors": [
+      {
+        "id": "powershell",
+        "label": "Starts PowerShell",
+        "pattern": "\\b(?:powershell|pwsh)(?:\\.exe)?\\b"
+      },
+      {
+        "id": "cmd",
+        "label": "Starts the Windows command prompt",
+        "pattern": "\\bcmd(?:\\.exe)?\\s*/[ckr]\\b|\\bcmd\\.exe\\b"
+      },
+      {
+        "id": "mshta",
+        "label": "Uses mshta, a Windows tool attackers use to run web code",
+        "pattern": "\\bmshta(?:\\.exe)?\\b"
+      },
+      {
+        "id": "msiexec",
+        "label": "Runs a Windows installer",
+        "pattern": "\\bmsiexec(?:\\.exe)?\\b"
+      },
+      {
+        "id": "rundll32",
+        "label": "Uses rundll32 to load a program library",
+        "pattern": "\\brundll32(?:\\.exe)?\\b"
+      },
+      {
+        "id": "regsvr32",
+        "label": "Uses regsvr32 to load a program library",
+        "pattern": "\\bregsvr32(?:\\.exe)?\\b"
+      },
+      {
+        "id": "script-host",
+        "label": "Runs a Windows script file",
+        "pattern": "\\b[wc]script(?:\\.exe)?\\b"
+      },
+      {
+        "id": "certutil",
+        "label": "Uses certutil, often abused to download files",
+        "pattern": "\\bcertutil(?:\\.exe)?\\b"
+      },
+      {
+        "id": "bitsadmin",
+        "label": "Uses bitsadmin, often abused to download files",
+        "pattern": "\\bbitsadmin(?:\\.exe)?\\b"
+      },
+      {
+        "id": "conhost",
+        "label": "Starts a hidden console window",
+        "pattern": "\\bconhost(?:\\.exe)?\\b"
+      },
+      {
+        "id": "finger",
+        "label": "Uses the finger tool to fetch commands from a server",
+        "pattern": "\\bfinger(?:\\.exe)?\\s+\\S+@\\S+"
+      },
+      {
+        "id": "dotnet-lolbin",
+        "label": "Uses a .NET build tool to run code",
+        "pattern": "\\b(?:msbuild|installutil|regasm|regsvcs)(?:\\.exe)?\\b"
+      },
+      {
+        "id": "schtasks",
+        "label": "Creates a scheduled task",
+        "pattern": "\\bschtasks(?:\\.exe)?\\b"
+      },
+      {
+        "id": "invoke-expression",
+        "label": "Runs text as code (Invoke-Expression)",
+        "pattern": "\\b(?:iex|invoke-expression)\\b"
+      },
+      {
+        "id": "osascript",
+        "label": "Runs an AppleScript on a Mac",
+        "pattern": "\\bosascript\\b"
+      },
+      {
+        "id": "pipe-to-shell",
+        "label": "Pipes downloaded text straight into a shell",
+        "pattern": "\\|\\s*(?:sudo\\s+)?(?:ba|z|da)?sh\\b"
+      },
+      {
+        "id": "shell-c",
+        "label": "Runs a shell command string",
+        "pattern": "\\b(?:ba|z)?sh\\s+-c\\b"
+      }
+    ],
+    "remote": [
+      {
+        "id": "url",
+        "label": "Contains a web address",
+        "pattern": "\\b(?:https?|ftp)://[^\\s\"'<>]+"
+      },
+      {
+        "id": "unc-path",
+        "label": "Loads a file from a remote network share",
+        "pattern": "\\\\\\\\[a-z0-9._-]+(?:@ssl)?(?:@\\d+)?\\\\"
+      },
+      {
+        "id": "downloader",
+        "label": "Downloads something from the internet",
+        "pattern": "\\b(?:iwr|irm|invoke-webrequest|invoke-restmethod|start-bitstransfer|downloadstring|downloadfile|downloaddata|net\\.webclient|curl(?:\\.exe)?|wget(?:\\.exe)?)\\b"
+      },
+      {
+        "id": "finger-host",
+        "label": "Asks a remote server for commands (finger)",
+        "pattern": "\\bfinger(?:\\.exe)?\\s+\\S+@\\S+"
+      },
+      {
+        "id": "ip-address",
+        "label": "Contains an IP address",
+        "pattern": "\\b\\d{1,3}(?:\\.\\d{1,3}){3}\\b"
+      },
+      {
+        "id": "bare-domain",
+        "label": "Contains an unusual web domain",
+        "pattern": "\\b[a-z0-9-]+(?:\\.[a-z0-9-]+)*\\.(?:top|xyz|icu|shop|click|cyou|sbs|lat|rest|live|online|site|website|space|fun|cfd|bond|ru|su)(?=[/:\\s\"']|$)"
+      }
+    ],
+    "encoded": [
+      {
+        "id": "ps-encoded",
+        "label": "Hides its real instructions in encoded text",
+        "pattern": "\\s-e(?:nc|ncodedcommand|c)?\\s+[a-z0-9+/=]{20,}"
+      },
+      {
+        "id": "from-base64",
+        "label": "Decodes hidden text before running it",
+        "pattern": "frombase64string|\\bbase64\\s+(?:-d|--decode|-D)\\b|\\batob\\("
+      },
+      {
+        "id": "long-base64",
+        "label": "Contains a long block of encoded text",
+        "pattern": "[a-z0-9+/]{120,}={0,2}"
+      }
+    ],
+    "stealth": [
+      {
+        "id": "hidden-window",
+        "label": "Hides its window so you cannot see it running",
+        "weight": 25,
+        "pattern": "\\s-w(?:in(?:dow(?:style)?)?)?\\s+(?:h(?:idden)?|1)\\b"
+      },
+      {
+        "id": "policy-bypass",
+        "label": "Turns off PowerShell safety settings",
+        "weight": 10,
+        "pattern": "\\s-(?:nop(?:rofile)?|ep\\s+bypass|exec(?:utionpolicy)?\\s+bypass|noni(?:nteractive)?)\\b"
+      },
+      {
+        "id": "encoded",
+        "label": "Hides its real instructions in encoded text",
+        "weight": 30,
+        "pattern": "\\s-e(?:nc|ncodedcommand|c)?\\s+[a-z0-9+/=]{20,}|frombase64string|\\bbase64\\s+(?:-d|--decode|-D)\\b"
+      },
+      {
+        "id": "caret-obfuscation",
+        "label": "Disguised with ^ symbols to dodge antivirus",
+        "weight": 25,
+        "pattern": "\\w\\^\\w\\^?\\w"
+      },
+      {
+        "id": "backtick-obfuscation",
+        "label": "Disguised with ` symbols to dodge antivirus",
+        "weight": 20,
+        "pattern": "[a-z]`[a-z]+`[a-z]"
+      },
+      {
+        "id": "string-splitting",
+        "label": "Splits words apart to dodge antivirus",
+        "weight": 15,
+        "pattern": "['\"]\\s*\\+\\s*['\"]"
+      },
+      {
+        "id": "env-substring",
+        "label": "Builds words from pieces of system variables",
+        "weight": 25,
+        "pattern": "%[a-z_]+:~-?\\d+,-?\\d+%"
+      },
+      {
+        "id": "headless-console",
+        "label": "Runs in an invisible console",
+        "weight": 25,
+        "pattern": "\\bconhost(?:\\.exe)?\\s+--headless"
+      },
+      {
+        "id": "temp-drop",
+        "label": "Saves a file into a temporary or app-data folder",
+        "weight": 10,
+        "pattern": "%temp%|\\$env:temp|%appdata%|\\$env:appdata|%localappdata%|\\$env:localappdata|%programdata%|\\\\appdata\\\\|/tmp/"
+      },
+      {
+        "id": "quiet-install",
+        "label": "Installs a program silently, without asking you",
+        "weight": 20,
+        "pattern": "\\bmsiexec(?:\\.exe)?\\b[^\\n]*\\s/q[nb]?\\b"
+      },
+      {
+        "id": "start-minimized",
+        "label": "Starts minimized so you do not notice it",
+        "weight": 15,
+        "pattern": "\\bstart\\s+(?:\"\"\\s+)?/min\\b"
+      },
+      {
+        "id": "raw-ip",
+        "label": "Connects to a raw IP address instead of a website name",
+        "weight": 20,
+        "pattern": "(?:https?://|\\\\\\\\|@)\\d{1,3}(?:\\.\\d{1,3}){3}\\b"
+      },
+      {
+        "id": "suspicious-domain",
+        "label": "Uses a cheap web domain popular with attackers",
+        "weight": 15,
+        "pattern": "\\b[a-z0-9-]+(?:\\.[a-z0-9-]+)*\\.(?:top|xyz|icu|shop|click|cyou|sbs|lat|rest|live|online|site|website|space|fun|cfd|bond|ru|su)(?=[/:\\s\"']|$)"
+      },
+      {
+        "id": "remote-share",
+        "label": "Runs code straight from a remote network share",
+        "weight": 25,
+        "pattern": "\\\\\\\\[a-z0-9._-]+(?:@ssl)?(?:@\\d+)?\\\\"
+      },
+      {
+        "id": "pipe-to-cmd",
+        "label": "Feeds downloaded text straight into the command prompt",
+        "weight": 20,
+        "pattern": "\\|\\s*cmd(?:\\.exe)?\\b"
+      },
+      {
+        "id": "space-padding",
+        "label": "Pads the command with spaces to hide part of it",
+        "weight": 25,
+        "pattern": "\\S {25,}\\S"
+      }
+    ],
+    "decoys": [
+      {
+        "id": "fake-verification-comment",
+        "label": "Hides fake \"I am not a robot\" text after the real command",
+        "pattern": "(?:#|::|\\brem\\b)[^\\n]{0,200}?(?:verif|captcha|robot|human|cloudflare|turnstile|security\\s*check|ray\\s*id|identity|\\u2705|\\u2714)"
+      },
+      {
+        "id": "fake-file-path",
+        "label": "Disguises the command as a file path (FileFix trick)",
+        "pattern": "#\\s*[a-z]:\\\\[^\\n]*\\.(?:docx?|pdf|xlsx?|pptx?|txt|csv)\\b"
+      }
+    ]
+  },
+  "page": {
+    "runShortcut": [
+      {
+        "id": "win-r",
+        "label": "Tells you to press Windows + R",
+        "pattern": "(?:\\bwin(?:dows)?\\b|\\u229e)[^\\n]{0,30}?(?:\\+|\\band\\b|&)\\s*[\"'\\u201c\\u201d]?r\\b|\\bwindows\\s*(?:logo\\s*)?(?:key|button)\\b[^\\n]{0,40}?\\bpress\\s*[\"'\\u201c\\u201d]?r\\b"
+      },
+      {
+        "id": "win-x",
+        "label": "Tells you to press Windows + X",
+        "pattern": "(?:\\bwin(?:dows)?\\b|\\u229e)[^\\n]{0,30}?(?:\\+|\\band\\b|&)\\s*[\"'\\u201c\\u201d]?x\\b"
+      },
+      {
+        "id": "run-dialog",
+        "label": "Mentions the Run dialog",
+        "pattern": "\\brun\\s+(?:dialog|box|window|prompt)\\b"
+      },
+      {
+        "id": "open-terminal",
+        "label": "Tells you to open a terminal",
+        "pattern": "\\bopen\\s+(?:the\\s+)?(?:powershell|windows\\s+terminal|terminal|command\\s+prompt)\\b"
+      },
+      {
+        "id": "explorer-address-bar",
+        "label": "Tells you to paste into File Explorer (FileFix)",
+        "pattern": "file\\s*explorer[^\\n]{0,120}?address\\s*bar|address\\s*bar[^\\n]{0,120}?file\\s*explorer|\\bctrl\\s*\\+\\s*l\\b"
+      },
+      {
+        "id": "mac-terminal",
+        "label": "Tells you to open Terminal on a Mac",
+        "pattern": "(?:\\bcmd\\b|\\bcommand\\b|\\u2318)\\s*\\+\\s*space\\b"
+      }
+    ],
+    "paste": [
+      {
+        "id": "paste",
+        "label": "Tells you to paste",
+        "pattern": "\\bctrl\\s*\\+\\s*v\\b|(?:\\bcmd\\b|\\bcommand\\b|\\u2318)\\s*\\+\\s*v\\b|\\bpaste\\b"
+      }
+    ],
+    "verifyTheme": [
+      {
+        "id": "verify",
+        "label": "Pretends to be a human or security check",
+        "pattern": "\\bverif(?:y|ication)\\b|captcha|\\bi\\s*(?:'|\\u2019)?\\s*a?m\\s+not\\s+a\\s+robot\\b|\\bare\\s+you\\s+(?:a\\s+)?human\\b|\\bhuman\\s+check\\b|cloudflare|turnstile|\\bsecurity\\s+check\\b|\\bray\\s+id\\b|\\bprove\\s+you\\b"
+      },
+      {
+        "id": "fake-fix",
+        "label": "Pretends you need to fix an error",
+        "pattern": "\\bfix\\s+(?:the\\s+|this\\s+)?(?:error|issue|problem)\\b|\\bupdate\\s+your\\s+browser\\b|\\bbrowser\\s+update\\b|\\bfailed\\s+to\\s+load\\b"
+      }
+    ]
+  },
+  "verdict": {
+    "stealthBlockAt": 25,
+    "stealthOnlyBlockAt": 50
+  }
+}

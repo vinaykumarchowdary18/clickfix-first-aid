@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dev dependencies
+        run: npm install
+      - name: Generated files are up to date
+        run: npm run check-build
+      - name: Engine tests
+        run: npm test
+      - name: PowerShell checker tests
+        shell: pwsh
+        run: ./checker/tests/Run-Tests.ps1
+      - name: Browser tests
+        run: |
+          npx playwright install --with-deps chromium
+          xvfb-run -a npm run test:e2e
+
+  windows-powershell-5:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Checker tests on Windows PowerShell 5.1
+        shell: powershell
+        run: .\checker\tests\Run-Tests.ps1
+      - name: Real read-only PC check runs without errors
+        shell: powershell
+        run: |
+          .\checker\Check-ClickFix.ps1 -Json -NoPause | Out-File result.json
+          Get-Content result.json
+          if ($LASTEXITCODE -gt 2) { exit 1 } else { exit 0 }

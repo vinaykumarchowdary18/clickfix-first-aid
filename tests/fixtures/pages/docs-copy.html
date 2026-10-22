@@ -1,0 +1,11 @@
+<!doctype html><meta charset="utf-8"><title>Docs: install</title>
+<h1>Install Scoop</h1>
+<p>Open PowerShell and run:</p>
+<pre id="cmd">irm https://get.scoop.sh | iex</pre>
+<button id="copy">Copy</button>
+<script>
+document.getElementById('copy').addEventListener('click', async () => {
+  await navigator.clipboard.writeText(document.getElementById('cmd').textContent);
+  document.title = 'copied';
+});
+</script>

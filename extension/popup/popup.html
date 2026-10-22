@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ClickFix First Aid</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <img src="../icons/icon-48.png" width="32" height="32" alt="">
+    <div>
+      <h1>ClickFix First Aid</h1>
+      <p class="status"><span class="dot"></span>Protection is on</p>
+    </div>
+  </header>
+
+  <section class="stats" aria-label="What has been caught">
+    <div><strong id="blocked">0</strong><span>attacks blocked</span></div>
+    <div><strong id="lures">0</strong><span>trap pages spotted</span></div>
+    <div><strong id="warned">0</strong><span>gentle warnings</span></div>
+  </section>
+
+  <section>
+    <h2>Recent</h2>
+    <ul id="recent"><li class="empty">Nothing caught yet. That is good news.</li></ul>
+  </section>
+
+  <section class="actions">
+    <button id="guide" class="primary" type="button">I already ran something. What now?</button>
+    <a id="demo" class="link" target="_blank" rel="noopener" hidden>Try a safe demo attack</a>
+    <a id="home" class="link" target="_blank" rel="noopener" hidden>How to check your Windows PC</a>
+  </section>
+
+  <section class="settings">
+    <label><input id="soft" type="checkbox" checked> Show gentle warnings for installer commands</label>
+    <button id="clear" class="quiet" type="button">Clear history</button>
+  </section>
+
+  <footer>
+    <span id="version"></span> · Free and open source · Nothing leaves your browser
+  </footer>
+
+  <script src="../src/generated/config.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
