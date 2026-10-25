@@ -38,7 +38,7 @@ ClickFix is one of the most common ways attackers get in today:
 - ReliaQuest attributed **nearly 28% of defense-evasion activity** to ClickFix between March and May 2026 ([source](https://www.darkreading.com/vulnerabilities-threats/winner-dominant-malware-delivery-clickfix)).
 - Variants keep appearing: "FileFix" uses the File Explorer address bar instead of Win+R, and others target Mac Terminal ([Microsoft analysis](https://www.microsoft.com/en-us/security/blog/2025/08/21/think-before-you-clickfix-analyzing-the-clickfix-social-engineering-technique)).
 
-This project started after the author's own PC was infected by a ClickFix page inside a paid online task in October 2026. Within hours, stolen logins were used to take over social media and chat accounts. Everything here is built from that experience: what would have stopped it, what showed it had happened, and what actually worked to recover.
+This project started in October 2026, after a fake "I'm not a robot" page tricked its author. Everything here is built from that experience: what would have stopped it, what showed it had happened, and what actually worked to recover.
 
 ## Install
 

