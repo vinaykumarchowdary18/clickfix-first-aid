@@ -59,3 +59,22 @@ jobs:
           .\checker\Check-ClickFix.ps1 -Json -NoPause | Out-File result.json
           Get-Content result.json
           if ($LASTEXITCODE -gt 2) { exit 1 } else { exit 0 }
+
+  # Antivirus programs scan files for attack text, and a security project is
+  # full of it. This scans the repository the way a Windows user's PC would
+  # when they download it, so a false alarm is caught here first.
+  defender-scan:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan the repository with Microsoft Defender
+        shell: powershell
+        run: |
+          try { Get-MpComputerStatus -ErrorAction Stop | Out-Null } catch { Write-Warning "Microsoft Defender is not available on this runner, so the scan was skipped: $($_.Exception.Message)"; exit 0 }
+          try { Update-MpSignature -ErrorAction Stop } catch { Write-Warning "Could not update Defender signatures: $($_.Exception.Message)" }
+          & "$env:ProgramFiles\Windows Defender\MpCmdRun.exe" -Scan -ScanType 3 -File "$env:GITHUB_WORKSPACE" -DisableRemediation
+          $code = $LASTEXITCODE
+          Write-Host "MpCmdRun exit code: $code"
+          if ($code -eq 2) { Write-Error 'Microsoft Defender flagged a file in the repository. See the scan log above.'; exit 1 }
+          exit 0

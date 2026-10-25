@@ -6,7 +6,7 @@
 2. `npm ci`, then `npm run build` and commit the generated files.
 3. All of these pass: `npm run check-build`, `npm test`, `npm run test:ps`, `npm run test:e2e`, `npm audit --audit-level=moderate`.
 4. `npm run package`, then run the browser tests once more against the packaged extension: unzip `dist/clickfix-first-aid-extension-vX.Y.Z.zip` and run `CFA_EXTENSION_DIR=<unzipped folder> npm run test:e2e`.
-5. Push and wait for CI (Linux on Node 22 and 24, and Windows PowerShell 5.1) to pass.
+5. Push and wait for CI (Linux on Node 22 and 24, Windows PowerShell 5.1, and the Microsoft Defender scan of the repository) to pass. If the Defender job says it was skipped, Defender was not available on the runner: unzip the release on a Windows PC with Defender before calling it done.
 6. Tag `vX.Y.Z` and create a GitHub release with the files from `dist/` and their SHA-256 checksums (`SHA256SUMS.txt`).
 
 ## Before calling a release stable, or publishing to a browser store
