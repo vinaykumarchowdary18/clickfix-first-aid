@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "ClickFix First Aid",
-  "version": "0.3.1",
-  "description": "Blocks fake 'verify you are human' pages that trick you into pasting malware commands. Free, open source, nothing leaves your browser.",
+  "version": "0.3.2",
+  "description": "Stops fake \"I'm not a robot\" pages from tricking you into pasting malware commands. Free, open source, nothing leaves your browser.",
   "minimum_chrome_version": "111",
   "icons": {
     "16": "icons/icon-16.png",

@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.3.2 (25 October 2026)
+
+Getting ready for the Chrome Web Store. The protection itself is unchanged.
+
+- **The extension's description was 134 characters.** The Chrome Web Store refuses more than 132, so it is now shorter, and the build stops with an error if it ever gets too long again.
+- **PRIVACY.md now says plainly that the extension reads the text shown on pages** to spot trap instructions, on your computer, and that page text is never saved or sent anywhere.
+- **New `store/` folder** with the Chrome Web Store listing, field by field, plus the screenshots and promo images. They were made from the project's safe demo page and a made-up example page, with the real extension running.
+
 ## v0.3.1 (25 October 2026)
 
 Fixes found while testing v0.3.0 on a real Windows laptop and making the project video, before the first public release.

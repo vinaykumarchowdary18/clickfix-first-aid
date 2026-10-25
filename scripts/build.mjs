@@ -80,6 +80,12 @@ outputs.set(
 
 const manifest = JSON.parse(read('extension/manifest.json'));
 manifest.version = pkg.version;
+// Chrome's limits: the Chrome Web Store refuses an upload whose description is
+// longer than 132 characters, and the name may be at most 75.
+if ([...manifest.description].length > 132) {
+  throw new Error(`manifest.json description is ${[...manifest.description].length} characters; the limit is 132.`);
+}
+if ([...manifest.name].length > 75) throw new Error('manifest.json name is longer than 75 characters.');
 outputs.set('extension/manifest.json', JSON.stringify(manifest, null, 2) + '\n');
 
 const fill = (s) =>
