@@ -1,9 +1,12 @@
 name: Release
 
-# Push a tag like v0.3.1 and GitHub builds the release files from the source
-# in this repository, on GitHub's own machine, and publishes them with
-# checksums. Nobody's PC is involved, so what people download matches the code.
+# Publishes a release built from the source in this repository, on GitHub's own
+# machine, with checksums. Nobody's PC is involved, so what people download
+# matches the code. Start it either way:
+#   - Actions tab > Release > Run workflow (uses the version in package.json), or
+#   - push a tag like v0.3.1.
 on:
+  workflow_dispatch:
   push:
     tags: ['v*']
 
@@ -21,10 +24,19 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci --ignore-scripts
-      - name: Version in package.json matches the tag
+      - name: Work out the version
+        id: v
         run: |
-          v="v$(node -p "require('./package.json').version")"
-          if [ "$v" != "$GITHUB_REF_NAME" ]; then echo "Tag $GITHUB_REF_NAME does not match package.json ($v)"; exit 1; fi
+          tag="v$(node -p "require('./package.json').version")"
+          if [ "$GITHUB_EVENT_NAME" = "push" ] && [ "$GITHUB_REF_NAME" != "$tag" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match package.json ($tag)"; exit 1
+          fi
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "::error::Release $tag already exists. Raise the version in package.json first."; exit 1
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ github.token }}
       - name: Generated files are up to date
         run: npm run check-build
       - name: Engine tests
@@ -38,6 +50,8 @@ jobs:
       - name: Publish the release
         env:
           GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.v.outputs.tag }}
         run: |
-          notes=$(awk -v v="## $GITHUB_REF_NAME " 'index($0, v) == 1 {on=1; next} /^## v/ && on {exit} on' CHANGELOG.md)
-          gh release create "$GITHUB_REF_NAME" dist/* --title "ClickFix First Aid $GITHUB_REF_NAME" --notes "${notes:-See CHANGELOG.md}"
+          notes=$(awk -v v="## $TAG " 'index($0, v) == 1 {on=1; next} /^## v/ && on {exit} on' CHANGELOG.md)
+          gh release create "$TAG" dist/* --target "$GITHUB_SHA" --title "ClickFix First Aid $TAG" --notes "${notes:-See CHANGELOG.md}"
+          echo "::notice::Published $TAG"
