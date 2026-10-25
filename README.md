@@ -118,4 +118,4 @@ Ideas and contributions are welcome, especially new attack samples, translations
 
 MIT. See [LICENSE](LICENSE).
 
-Created by Vinay Kumar Mandadi, built with help from Claude (Anthropic).
+Created by Vinay Kumar Mandadi, built with help.
