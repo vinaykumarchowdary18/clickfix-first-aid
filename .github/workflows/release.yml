@@ -1,0 +1,42 @@
+name: Release
+
+# Push a tag like v0.3.1 and GitHub builds the release files from the source
+# in this repository, on GitHub's own machine, and publishes them with
+# checksums. Nobody's PC is involved, so what people download matches the code.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Version in package.json matches the tag
+        run: |
+          v="v$(node -p "require('./package.json').version")"
+          if [ "$v" != "$GITHUB_REF_NAME" ]; then echo "Tag $GITHUB_REF_NAME does not match package.json ($v)"; exit 1; fi
+      - name: Generated files are up to date
+        run: npm run check-build
+      - name: Tests
+        run: |
+          npm test
+          npx playwright install --with-deps chromium
+          xvfb-run -a npm run test:e2e
+      - name: Build release files
+        run: npm run package
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          notes=$(awk -v v="## $GITHUB_REF_NAME " 'index($0, v) == 1 {on=1; next} /^## v/ && on {exit} on' CHANGELOG.md)
+          gh release create "$GITHUB_REF_NAME" dist/* --title "ClickFix First Aid $GITHUB_REF_NAME" --notes "${notes:-See CHANGELOG.md}"
