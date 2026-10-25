@@ -1,0 +1,12 @@
+# Independent reviews
+
+Outside reviews of ClickFix First Aid, kept here so anyone can see what was found and what was done about it. They were produced with Perplexity (several AI models) at the author's request. Every finding was checked before acting on it; [CHANGELOG.md](../CHANGELOG.md) says what was fixed, and why anything was not.
+
+| File | Covers | What came of it |
+|---|---|---|
+| [2026-10-22-v0.1.0-security-review.pdf](2026-10-22-v0.1.0-security-review.pdf) | The v0.1.0 source, run live in Chromium: 11 bypasses, 7 false-alarm problems, 4 UI issues, 7 PowerShell issues, 10 guide corrections, with harmless proof-of-concept pages. | Fixed in v0.2.0, except one guide correction that did not match Microsoft's documentation. The proof-of-concept pages run in the browser tests (`tests/fixtures/pages/review/`). |
+| [2026-10-24-architecture-and-risk-analysis.pdf](2026-10-24-architecture-and-risk-analysis.pdf) | Architecture, failure paths, races and test priorities, worked out from the v0.1.0 review and harness (not the v0.2.0 source). | Its points were already fixed in v0.2.0, except copy-time cost on huge pages (B6), which was measured in v0.3.0 and written down as a limitation. |
+| [2026-10-24-qa-automation-plan.pdf](2026-10-24-qa-automation-plan.pdf) | A five-area test plan and a contract test suite. | Its detector contract run against this engine passes 7 of 8 cases unmodified; the 8th expects non-text input to throw, while this engine converts it to text like the browser does. The 7 cases are in `tests/contracts.test.mjs`. |
+| [2026-10-24-security-and-integration-review.pdf](2026-10-24-security-and-integration-review.pdf) | Trust boundaries, browser APIs, test strategy and the recovery guide's links, as of 24 October 2026. | Led to v0.3.0: state that survives the background worker stopping, settings changed in one place, a second check in the isolated world, a test server that listens on the local machine only, weekly link checking, and guide wording. |
+
+The second round also came with a complete rewrite of the extension (its own 0.2.0-rc.1). It was not adopted: run against this project's test samples, its engine missed 2 of the 26 attack shapes, blocked 10 of the 11 legitimate installer and one-liner samples (by design, with no Copy anyway), and could be switched off by a page replacing `RegExp.prototype[Symbol.replace]`. Its good ideas were taken instead; see CHANGELOG.md.

@@ -73,7 +73,7 @@ function New-CfaDetector {
         }
         return , $out
     }
-    $maxChars = 20000; $maxLines = 5; $blockAt = 25; $stealthOnlyAt = 50
+    $maxChars = 200000; $maxLines = 5; $blockAt = 25; $stealthOnlyAt = 50
     if ($Rules.PSObject.Properties['limits']) {
         if ($Rules.limits.PSObject.Properties['maxChars']) { $maxChars = [int]$Rules.limits.maxChars }
         if ($Rules.limits.PSObject.Properties['maxLinesForAutoBlock']) { $maxLines = [int]$Rules.limits.maxLinesForAutoBlock }
@@ -138,7 +138,8 @@ function Test-CfaCommand {
     # Verdicts: block (attack), hold (downloads and runs something), allow.
     param([Parameter(Mandatory = $true)] $Detector, [AllowEmptyString()][string]$Text)
     $raw = [string]$Text
-    if ($raw.Length -gt $Detector.MaxChars) { $raw = $raw.Substring(0, $Detector.MaxChars) }
+    $truncated = $raw.Length -gt $Detector.MaxChars
+    if ($truncated) { $raw = $raw.Substring(0, $Detector.MaxChars) }
     $uni = ConvertTo-CfaUnified $raw
     $norm = ConvertTo-CfaNormalized $uni
     $lines = Get-CfaCodeLineCount $raw
@@ -183,6 +184,11 @@ function Test-CfaCommand {
             & $add $why; & $add $stealthLabels
             $verdict = 'hold'; $rule = 'download-and-run'
         }
+    }
+    if ($truncated -and $verdict -eq 'allow') {
+        # A command can hide after a huge run of blank lines, so never simply allow it.
+        [void]$reasons.Add("Too long to check completely (over $($Detector.MaxChars) characters)")
+        $verdict = 'hold'; $rule = 'too-long'
     }
 
     return [pscustomobject]@{

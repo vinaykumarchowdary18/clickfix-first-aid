@@ -1,0 +1,26 @@
+name: Bug report
+description: Something does not work as described (not a bypass; report those privately).
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: "For a way past the protection, use the private \"Report a vulnerability\" button on the Security tab instead. Never paste real credentials, private command arguments, or PC check output with your own file paths."
+  - type: input
+    id: versions
+    attributes:
+      label: Extension, browser and Windows versions
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: "Use a harmless command like echo test and example.invalid web addresses."
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: What you expected, and what happened
+    validations:
+      required: true

@@ -1,10 +1,10 @@
 {
   "name": "clickfix-first-aid-rules",
-  "version": "2.0.0",
-  "updated": "2026-10-22",
+  "version": "2.1.0",
+  "updated": "2026-10-25",
   "notes": "Patterns must work in both JavaScript and .NET regex engines. All patterns are matched case-insensitively.",
   "limits": {
-    "maxChars": 20000,
+    "maxChars": 200000,
     "maxLinesForAutoBlock": 5
   },
   "command": {
@@ -117,7 +117,7 @@
       {
         "id": "remote-script",
         "label": "Opens a program or script straight from a remote server",
-        "pattern": "\\\\\\\\[^\\s\\\"']+\\.(?:hta|exe|bat|cmd|ps1|vbs|vbe|js|jse|wsf|scr|dll|lnk|msi|cpl)\\b"
+        "pattern": "\\\\\\\\[^\\s\\\"'\\\\]{1,253}(?:\\\\[^\\s\\\"'\\\\]{1,255}){0,31}\\.(?:hta|exe|bat|cmd|ps1|vbs|vbe|js|jse|wsf|scr|dll|lnk|msi|cpl)\\b"
       },
       {
         "id": "dynamic-invoke",
@@ -169,12 +169,12 @@
       {
         "id": "bare-domain",
         "label": "Contains an unusual web domain",
-        "pattern": "\\b[a-z0-9-]+(?:\\.[a-z0-9-]+)*\\.(?:top|xyz|icu|shop|click|cyou|sbs|lat|rest|live|online|site|website|space|fun|cfd|bond|ru|su)(?=[/:\\s\"']|$)"
+        "pattern": "(?<![a-z0-9-])[a-z0-9-]{1,63}(?:\\.[a-z0-9-]{1,63}){0,10}\\.(?:top|xyz|icu|shop|click|cyou|sbs|lat|rest|live|online|site|website|space|fun|cfd|bond|ru|su)(?=[/:\\s\\\"']|$)"
       },
       {
         "id": "bare-host-path",
         "label": "Contains a web address",
-        "pattern": "\\b[a-z0-9-]+(?:\\.[a-z0-9-]+)*\\.[a-z]{2,24}/[^\\s\\\"'<>]+"
+        "pattern": "(?<![a-z0-9-])[a-z0-9-]{1,63}(?:\\.[a-z0-9-]{1,63}){0,10}\\.[a-z]{2,24}/[^\\s\\\"'<>]+"
       }
     ],
     "encoded": [
@@ -271,7 +271,7 @@
         "id": "suspicious-domain",
         "label": "Uses a cheap web domain popular with attackers",
         "weight": 15,
-        "pattern": "\\b[a-z0-9-]+(?:\\.[a-z0-9-]+)*\\.(?:top|xyz|icu|shop|click|cyou|sbs|lat|rest|live|online|site|website|space|fun|cfd|bond|ru|su)(?=[/:\\s\"']|$)"
+        "pattern": "(?<![a-z0-9-])[a-z0-9-]{1,63}(?:\\.[a-z0-9-]{1,63}){0,10}\\.(?:top|xyz|icu|shop|click|cyou|sbs|lat|rest|live|online|site|website|space|fun|cfd|bond|ru|su)(?=[/:\\s\\\"']|$)"
       },
       {
         "id": "remote-share",
@@ -350,7 +350,7 @@
       {
         "id": "fake-verification-comment",
         "label": "Hides fake \"I am not a robot\" text after the real command",
-        "pattern": "(?:#|::|\\brem\\b)[^\\n]{0,200}?(?:\\brobot\\b|captcha|\\bray\\s*id\\b|verification\\s*(?:id|code)\\b|human\\s*verification|\\bi\\s*am\\s*(?:a\\s+)?human\\b|cloudflare\\s+(?:ray|verification|human|security|check)|\\u2705|\\u2714)"
+        "pattern": "(?:#|::|\\brem\\b)(?:(?!#|::)[^\\n]){0,200}?(?:\\brobot\\b|captcha|\\bray\\s*id\\b|verification\\s*(?:id|code)\\b|human\\s*verification|\\bi\\s*am\\s*(?:a\\s+)?human\\b|cloudflare\\s+(?:ray|verification|human|security|check)|\\u2705|\\u2714)"
       },
       {
         "id": "fake-file-path",

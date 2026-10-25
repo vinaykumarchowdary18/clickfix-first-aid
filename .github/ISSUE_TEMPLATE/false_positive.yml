@@ -1,0 +1,28 @@
+name: Something normal was blocked or paused
+description: A real site or command was blocked, paused or flagged by mistake.
+labels: [false positive]
+body:
+  - type: markdown
+    attributes:
+      value: "Thank you. Please do not paste passwords, tokens or private paths. Break web links like hxxps[://]example[.]com."
+  - type: input
+    id: site
+    attributes:
+      label: Which site (or kind of site)?
+      placeholder: "docs.example.com, an online code editor, ..."
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What did you copy, and what happened?
+      description: "Blocked (red warning), paused (Copy anyway panel), or the trap-page banner? Include the command if it is public, defanged."
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Extension version and browser version
+      placeholder: "ClickFix First Aid 0.3.0, Chrome 131"
+    validations:
+      required: true

@@ -1,5 +1,42 @@
 # Changelog
 
+## v0.3.0 (25 October 2026)
+
+This release comes from a second round of independent review with Perplexity (an architecture and risk analysis, a QA plan with contract tests, and a security and integration review, all in [reviews/](reviews/)), plus problems found while checking that round. The round also delivered a complete rewrite of the extension. It was not adopted: run against this project's test samples, its engine missed 2 of the 26 attack shapes, blocked 10 of the 11 legitimate installer and one-liner samples (by design), and could be switched off by a page replacing `RegExp.prototype[Symbol.replace]`. Its good ideas were taken instead, and are credited below.
+
+The fixes come with tests that fail on v0.2.0 and pass now. The one exception is the real-click check on the warning buttons, which no web page can reach to test, because the buttons sit in a closed shadow root.
+
+### Protection
+
+- **Padding could hide a command (found while checking the rewrite's length limit).** v0.2 checked only the first 20,000 characters, so 20,000 blank lines or spaces before a command made it look harmless. This matters most for traps that ask you to paste into Terminal or PowerShell. The check now covers 200,000 characters, and anything longer is paused with "too long to check completely", never simply allowed. The PC check does the same.
+- **Four patterns could take over 40 seconds** on 200,000 characters of hostile text (catastrophic backtracking in the web-address and network-path patterns, and a slow scan in the fake-CAPTCHA-comment rule). Every repeat now has a sensible upper limit. A new test times every pattern on hostile text.
+- **Connecting the dots survives the background worker stopping** (integration review: "a service worker is ephemeral"). Chrome stops it after about 30 idle seconds; v0.2 then forgot that a tab had shown trap steps, so a later copy was only paused, not blocked. What each tab has seen now lives in `chrome.storage.session`.
+- **One place for every settings change** (integration review, C3). In v0.2 the popup still wrote settings itself and could undo a change made in a tab at the same moment. All changes, and the history counters, now go through one queue in the background worker. Only the popup may change settings, and "Always allow on this site" takes the site from the tab's own address.
+- **A second check in the isolated world** (integration review: "isolated-world code should own the verdict"). Reports whose text has nothing command-like in it are ignored, using the same test the guard uses, and they no longer use up the warning slot.
+- **Warning buttons only react to real clicks** (`event.isTrusted`), on top of the closed shadow root.
+- **"Copy anyway" copies the whole text.** v0.2 passed on only the first 20,000 characters, so a long held script came out cut off. Reports now carry up to 1,000,000 characters, and if text is longer than that, "Copy anyway" is not offered.
+- **No network from the extension's own pages**: a Content Security Policy with `connect-src 'none'` (from the rewrite).
+
+### New
+
+- **Check a command**, in the popup: paste a command a site gave you and see what the rules say, without running it (idea from the rewrite). It says plainly that "no known attack pattern" does not mean safe.
+
+### Recovery guide
+
+- Defender offline scan: leads with the label on Microsoft's current consumer help page, "Microsoft Defender Antivirus (offline scan)", mentions the older name and the "Start an offline scan" button, and links both Microsoft pages. The review suggested dropping "about 15 minutes"; it was kept, because Microsoft's technical guide states it, and it is now attributed to that guide.
+- Discord: "Devices" is mentioned as "if your app shows it". The review could not confirm that screen on Discord's own pages, and neither could we; Discord's guide does confirm that changing the password logs out all devices.
+
+### Project
+
+- `package-lock.json`, `npm ci` in CI, Node 22 and 24, dependency audit, Dependabot, issue and pull request templates, `PRIVACY.md`, `RELEASING.md`, and `SHA256SUMS.txt` with every release (from the rewrite). Release zips now use fixed file dates, so rebuilding the same sources with the same tools gives the same checksum.
+- `npm run links` and a weekly workflow check that the guide's official help links still work, without following redirects to other sites (from the rewrite).
+- The browser test server listens on the local machine only and refuses paths outside the test folders (integration review).
+- The QA suite's detector contract run against this engine: 7 of 8 pass unmodified. The 8th expects non-text input to throw; this engine converts it to text, as the browser's clipboard functions do, so the guard checks exactly what the browser would write. The 7 cases now run in `npm test`.
+
+### Measured, not changed
+
+- Copy-time cost on huge pages (B6): copying a command on a page with 1,000 paragraphs adds about 10 to 30 ms, on 20,000 paragraphs about 60 ms, and on 100,000 paragraphs about 0.2 seconds (headless Chromium, Linux). Ordinary copies are not affected, because the page is only read when the copied text looks like a command. Caching the page reading was considered and rejected: a page can change what is visible without the change being noticed in time, and a stale "no trap here" is worse than a short delay.
+
 ## v0.2.0 (22 October 2026)
 
 This release answers an independent pre-release security review of v0.1.0, run with Perplexity. Every finding was first reproduced against v0.1.0 (the review's proof-of-concept pages are now part of the test suite, in `tests/fixtures/pages/review/`), then fixed with a test that failed before the fix. IDs refer to the review.

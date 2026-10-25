@@ -45,7 +45,7 @@
   var _String = String;
   var _RegExp = RegExp;
 
-  var VERSION = '0.2.0';
+  var VERSION = '0.3.0';
 
   function str(x) {
     return typeof x === 'string' ? x : x == null ? '' : _String(x);
@@ -182,7 +182,7 @@
   function createDetector(rules) {
     if (!rules || !rules.command || !rules.page) throw new Error('ClickFix First Aid: rules missing');
     var limits = rules.limits || {};
-    var maxChars = limits.maxChars || 20000;
+    var maxChars = limits.maxChars || 200000;
     var maxLines = limits.maxLinesForAutoBlock || 5;
     var stealthBlockAt = (rules.verdict && rules.verdict.stealthBlockAt) || 25;
     var stealthOnlyBlockAt = (rules.verdict && rules.verdict.stealthOnlyBlockAt) || 50;
@@ -200,6 +200,7 @@
 
     function analyzeCommand(text) {
       var raw = str(text);
+      var fullLength = raw.length;
       if (raw.length > maxChars) raw = slice(raw, 0, maxChars);
       var uni = unify(raw);
       var norm = normalize(uni);
@@ -227,7 +228,11 @@
         stealthScore: stealthScore,
         decoys: decoys,
         hasExec: hasExec,
-        danger: hasExec && (remote.length > 0 || encoded.length > 0)
+        danger: hasExec && (remote.length > 0 || encoded.length > 0),
+        // Longer than we check. A page could hide a command after a huge run of
+        // blank lines, so text like this is never simply allowed.
+        truncated: fullLength > maxChars,
+        length: fullLength
       });
     }
 
@@ -273,6 +278,15 @@
     // page: result of analyzePage (or null). Only page.strong can block.
     // opts.subframe: the copy came from a frame embedded in the page.
     function decide(cmd, page, opts) {
+      var d = decideChecked(cmd, page, opts);
+      if (cmd && cmd.truncated && d.verdict === 'allow') {
+        add(d.reasons, 'Too long to check completely (over ' + maxChars + ' characters)');
+        return verdict('hold', 'too-long', d.reasons);
+      }
+      return d;
+    }
+
+    function decideChecked(cmd, page, opts) {
       var reasons = [];
       if (!cmd) return verdict('allow', '', reasons);
       var subframe = !!(opts && opts.subframe);
@@ -329,6 +343,18 @@
       return verdict('allow', '', reasons);
     }
 
+    // Is there anything here worth a closer look? The guard skips text without
+    // any of these, and the extension's isolated world uses the same test to
+    // ignore any report whose text has none of them.
+    function worthChecking(cmd) {
+      return !!cmd && (cmd.truncated || cmd.hasExec || cmd.remote.length > 0 || cmd.encoded.length > 0);
+    }
+
+    // Undo dashes, curly quotes and simple disguises, as the checks see it.
+    function normalizeText(text) {
+      return normalize(unify(str(text)));
+    }
+
     function check(text, pageText, opts) {
       var cmd = analyzeCommand(text);
       var page = pageText == null ? null : analyzePage(pageText);
@@ -342,6 +368,8 @@
       analyzeCommand: analyzeCommand,
       analyzePage: analyzePage,
       decide: decide,
+      worthChecking: worthChecking,
+      normalize: normalizeText,
       check: check
     });
   }

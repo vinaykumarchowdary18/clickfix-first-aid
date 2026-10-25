@@ -91,9 +91,10 @@ var _inEnd = (getOwnPropertyDescriptor(_inProto, 'selectionEnd') || {}).get;
 // the Run box, cmd, File Explorer or zsh they just fail with "not found"), and
 // they contain no quotes, pipes, ampersands, dollar signs or redirects.
 var SAFE_TEXT = '# STOP. ClickFix First Aid blocked this. A website tried to trick you into running a command on your computer. Close that page. Real human checks never ask you to paste anything.';
-var HOLD_TEXT = '# PAUSED. ClickFix First Aid held this copied command because it downloads and runs a program. Go back to the page and choose Copy anyway only if you trust the site.';
+var HOLD_TEXT = '# PAUSED. ClickFix First Aid held this copied text so you can check it first. Go back to the page and choose Copy anyway only if you trust the site.';
 
-var MAX_SEND = 20000;
+// Reports carry the whole text (up to this size), so "Copy anyway" copies all of it.
+var MAX_SEND = 1000000;
 var SEP = '\u001f';
 var programmaticCopy = false;
 var config = { hold: true, siteAllowed: false };
@@ -260,7 +261,7 @@ function selectedText() {
 function evaluate(text, programmatic) {
   if (text.length < 4) return null;
   var cmd = detector.analyzeCommand(text);
-  if (!cmd.hasExec && cmd.remote.length === 0 && cmd.encoded.length === 0) return null;
+  if (!detector.worthChecking(cmd)) return null;
   var d = detector.decide(cmd, analyzeThisPage(cmd.danger), { subframe: isSubframe });
   var v = d.verdict;
   if (v === 'block') return 'block';

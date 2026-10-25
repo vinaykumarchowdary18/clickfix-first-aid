@@ -171,16 +171,23 @@
     note: 'It downloads and runs a program'
   };
 
+  var MAX_REPORT = 1000000; // same as MAX_SEND in page-hook.js
+
   function onReport(ev) {
     var parts = String(ev.detail).split('\u001f');
     var verdict = parts[0];
-    if (!(verdict in lastAt)) return;
+    if (!Object.prototype.hasOwnProperty.call(lastAt, verdict)) return;
+    var text = parts.slice(2).join('\u001f');
+    var cmd = detector.analyzeCommand(text);
+    // Our own check, here where the page cannot interfere: a report about text
+    // with nothing command-like in it did not come from the guard. Ignore it.
+    if (!detector.worthChecking(cmd)) return;
     var now = Date.now();
     if (now - lastAt[verdict] < 500) return;
     lastAt[verdict] = now;
     var how = (parts[1] || '').slice(0, 40);
-    var text = parts.slice(2).join('\u001f').slice(0, 20000);
-    var r = detector.decide(detector.analyzeCommand(text), analyzeThisPage(), { subframe: !isTop });
+    var complete = text.length < MAX_REPORT;
+    var r = detector.decide(cmd, analyzeThisPage(), { subframe: !isTop });
     var reasons = r.reasons.length ? r.reasons.slice(0, 8) : [FALLBACK[verdict]];
     send({
       type: 'cfa-event',
@@ -191,7 +198,8 @@
         preview: defang(text, 600),
         how: how,
         host: topHost,
-        original: verdict === 'block' ? '' : text
+        // "Copy anyway" needs the whole text; never offer a cut-off copy.
+        original: verdict === 'block' || !complete ? '' : text
       }
     });
   }
@@ -310,9 +318,11 @@
     } else if (d.verdict === 'hold') {
       var original = String(d.original || '');
       self.CFAUI.showHeld(d, {
+        canCopy: original !== '',
         copyAnyway: function () { return copyText(original); },
         allowSite: function () {
-          send({ type: 'cfa-allow-site', host: d.host || topHost });
+          // The background takes the site from this tab's address, not from us.
+          send({ type: 'cfa-allow-site' });
           return copyText(original);
         }
       });

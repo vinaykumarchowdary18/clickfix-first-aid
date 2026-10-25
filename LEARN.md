@@ -27,8 +27,8 @@ extension/                    The Chrome/Edge extension
   src/page-hook.js              Clipboard guard, runs inside web pages
   src/content.js                Re-checks reports, watches page text
   src/ui.js                     The warnings you see
-  src/background.js             Counters, red "!" badge, closing tabs
-  popup/                        The window when you click the icon
+  src/background.js             Settings, counters, connecting the dots, red "!" badge
+  popup/                        The window when you click the icon, with "Check a command"
   pages/recovery.html           Offline copy of the recovery guide
 checker/src/Check-ClickFix.ps1    Windows PC check (source)
 checker/src/Protect-RunDialog.ps1 Win+R / Win+X switch (source)
@@ -36,6 +36,8 @@ guide/                        Recovery guide, website and demo (sources)
 docs/                         The published website (generated)
 tests/                        All tests and harmless fake trap pages
 scripts/build.mjs             Turns the sources into the finished files
+scripts/check-links.mjs       Checks that the guide's official help links still work
+reviews/                      The independent reviews, as PDFs
 ```
 
 **Single source of truth:** you edit the rules once in `rules/clickfix-rules.json`. The build script (`npm run build`) copies them into the extension and embeds them inside the PowerShell checker. So the browser and the PC check always make the same decisions.
@@ -70,6 +72,12 @@ The rules, in order:
 6. Otherwise: **allow.**
 
 A long script (more than five lines that actually do something) is held instead of blocked, because long legitimate scripts exist. Comment lines and empty lines do not count, so an attacker cannot pad a command with `#` lines to soften it.
+
+Very long text is never simply allowed. The engine checks up to 200,000 characters. Anything longer is held with the reason "too long to check completely", because a page could put a command after a huge run of blank lines (v0.2 only checked the first 20,000 characters, and a test showed that padding hid the command).
+
+### Patterns that must stay fast
+
+Some regular expressions get very slow on unlucky input. `\b[a-z0-9-]+(?:\.[a-z0-9-]+)*\.top` looks innocent, but on text like `a.a.a.a.a...` it tries every way of splitting the dots, again from every starting point. In v0.2 four patterns took over 40 seconds each on 200,000 characters made for this (this is called *catastrophic backtracking*). The fix is to give every repeat a sensible upper limit, like `{1,63}` for one part of a web address, which is also the real limit in DNS, and to start matching only at the beginning of a word. A test now runs every pattern against hostile text and fails if one is slow.
 
 ### Worked example: the command shape from the incident
 
@@ -122,10 +130,10 @@ A hostile page shares the MAIN world with our guard, so it can try to break it. 
 Blocking every installer would break developer sites. Letting them through silently is what an attacker wants. So a download-and-run command copied by a page's own code is **paused**: the clipboard gets this harmless message instead:
 
 ```
-# PAUSED. ClickFix First Aid held this copied command because it downloads and runs a program. Go back to the page and choose Copy anyway only if you trust the site.
+# PAUSED. ClickFix First Aid held this copied text so you can check it first. Go back to the page and choose Copy anyway only if you trust the site.
 ```
 
-The panel's **Copy anyway** button runs in the extension's isolated world, which has its own untouched copy of the clipboard functions, so it can write the original command without our own guard stopping it.
+The panel's **Copy anyway** button runs in the extension's isolated world, which has its own untouched copy of the clipboard functions, so it can write the original command without our own guard stopping it. It always copies the whole text: if the text is too long to pass on in full, the button is not offered, rather than copying a cut-off part.
 
 ### The safe messages
 
@@ -139,7 +147,7 @@ In v0.1 the guard sent its reports as a normal page event. The review showed a p
 2. The extension's isolated world opens it with `chrome.dom.openOrClosedShadowRoot`, a function only extensions have, starts listening on the node, and removes the element from the page.
 3. Reports travel as events on that node, which the page has no way to reach.
 
-Warnings are also drawn inside a closed shadow root (`ui.js`), all text is inserted as plain text, and text from the page has links broken and phone numbers removed.
+Warnings are also drawn inside a closed shadow root (`ui.js`), all text is inserted as plain text, and text from the page has links broken and phone numbers removed. Two more locks since v0.3: the isolated world runs its own check on every report and ignores one whose text has nothing command-like in it, and the warning buttons only react to real clicks by the person (`event.isTrusted`).
 
 ### Reading the page, and connecting the dots
 
@@ -147,9 +155,15 @@ Warnings are also drawn inside a closed shadow root (`ui.js`), all text is inser
 
 The background (`background.js`) then connects the dots within a tab: a paused copy plus trap instructions anywhere in the tab, in any frame, before the copy or within 20 seconds after it, becomes a full block warning. This catches traps that hide their steps in another frame or only show them after the copy.
 
+One catch: Chrome stops an extension's background worker after about 30 seconds without events, and starts a fresh one for the next event. Anything kept only in the worker's memory is then gone. In v0.2 the "this tab showed trap steps" note lived in memory, so a copy 40 seconds later was only paused instead of blocked. Since v0.3 the notes live in `chrome.storage.session`, which survives the worker restarting, is kept in memory only, is cleared when the browser closes, and cannot be read by web pages or content scripts. All changes to settings and notes go through one queue, so two events at the same moment cannot overwrite each other. A test stops the worker on purpose in the middle of an attack.
+
 ### Permissions
 
-Only `storage` (counters, settings, allowed sites) and the right to run on pages. No network access at all, so nothing can be sent anywhere.
+Only `storage` (counters, settings, allowed sites) and the right to run on pages. No network access at all, so nothing can be sent anywhere. The extension's own pages also carry a Content Security Policy with `connect-src 'none'`, so even a bug in the popup could not make a network request.
+
+### Check a command
+
+The popup has a box where you can paste a command a site gave you, before running it. It runs the same rules, right there in the popup, and never runs the text. The honest part is the wording: "No known attack pattern found" does not mean "safe", and the popup says so.
 
 ## 5. Part 2: the PC check (`Check-ClickFix.ps1`)
 
@@ -191,14 +205,16 @@ Every menu path in it was checked against the official help pages of Google, Mic
 
 | Command | What it checks |
 |---|---|
-| `npm test` | 69 engine tests: 26 attack shapes are blocked, 21 normal things are allowed, 11 installers are held, page detection in several phrasings and languages, frames, and tamper resistance. |
-| `npm run test:ps` | 111 PowerShell tests: the checker makes the **same decisions** as the JavaScript engine on all 58 shared samples, whole-PC analysis with fake evidence, installer-log fields, the Win+R helper, and scripts parse and are pure ASCII. |
-| `npm run test:e2e` | 43 tests that load the real extension into Chromium: all five copy methods, frames, late or hidden steps, Copy anyway, Always allow, copying by hand, a page hijacking a hand copy, and the 24 proof-of-concept pages from the security review. |
+| `npm test` | 80 engine tests: 26 attack shapes are blocked, 21 normal things are allowed, 11 installers are held, page detection in several phrasings and languages, frames, tamper resistance, long-text padding, pattern speed, and 7 contract cases from the independent QA suite. |
+| `npm run test:ps` | 116 PowerShell tests: the checker makes the **same decisions** as the JavaScript engine on all 58 shared samples, whole-PC analysis with fake evidence, installer-log fields, the Win+R helper, and scripts parse and are pure ASCII. |
+| `npm run test:e2e` | 50 tests that load the real extension into Chromium: all five copy methods, frames, late or hidden steps, Copy anyway (including very long text), Always allow, copying by hand, a page hijacking a hand copy, the background worker being stopped mid-attack, the popup's command check and settings, the no-network rule for extension pages, and the 24 proof-of-concept pages from the security review. |
 
 Three good habits we used:
 - **Control run.** Run the same trap pages with the extension *switched off* and confirm the attack text really lands on the clipboard. Otherwise a test can pass for the wrong reason.
 - **Test first for a gap.** When a weakness was spotted, we first wrote a test for it and watched it **fail**, then fixed the code and watched it pass.
 - **Get an outside review, then verify it.** The Perplexity review was mostly right, but not completely. One suggested correction to the recovery guide (the Defender scan's name and duration) did not match Microsoft's own documentation, so it was not applied. Treat reviews like any other source: check them.
+- **Check a rewrite against your own tests.** The second review round came with a complete rewrite of the extension. Running our test samples through its engine showed it missed 2 of the 26 attack shapes, blocked 10 of our 11 legitimate installer and one-liner samples (on purpose: it has no Copy anyway), and could be switched off by a page that replaces `RegExp.prototype[Symbol.replace]`. So we kept our code and took its good ideas instead (see CHANGELOG.md).
+- **Make the slow case a test.** Speed problems hide until someone sends unlucky input. A test that times every pattern on hostile text keeps them from coming back.
 
 ## 9. Ideas for next versions (good places to contribute)
 
@@ -223,4 +239,7 @@ Three good habits we used:
 - **Prototype poisoning**: changing a built-in like `Array.prototype` so that ordinary code quietly misbehaves.
 - **TOCTOU** ("time of check, time of use"): checking one value and then using a different one.
 - **Regular expression**: a pattern for matching text.
+- **Catastrophic backtracking**: when a regular expression tries a huge number of ways to match unlucky text and becomes extremely slow.
+- **Service worker**: the background part of an extension. Chrome starts and stops it as needed, so it must not keep important things only in memory.
+- **Content Security Policy (CSP)**: rules a page gives the browser about what it may load or connect to.
 - **Shadow root**: a private, sealed part of a web page.

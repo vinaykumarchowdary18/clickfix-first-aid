@@ -149,11 +149,21 @@ if (PACKAGE) {
   walk(join(ROOT, 'extension'));
   execFileSync('python3', ['-c', [
     'import sys, zipfile',
+    '# Same files in, same zip out: fixed dates and permissions, so the checksum can be reproduced.',
     'zf = zipfile.ZipFile(sys.argv[1], "w", zipfile.ZIP_DEFLATED)',
-    'for f in sys.argv[3:]: zf.write(sys.argv[2] + "/" + f, f)',
+    'for f in sys.argv[3:]:',
+    '    info = zipfile.ZipInfo(f, date_time=(2026, 1, 1, 0, 0, 0))',
+    '    info.compress_type = zipfile.ZIP_DEFLATED',
+    '    info.external_attr = 0o644 << 16',
+    '    zf.writestr(info, open(sys.argv[2] + "/" + f, "rb").read())',
     'zf.close()'
   ].join('\n'), join(dist, zipName), join(ROOT, 'extension'), ...files.sort()]);
   copyFileSync(join(ROOT, 'checker/Check-ClickFix.ps1'), join(dist, 'Check-ClickFix.ps1'));
   copyFileSync(join(ROOT, 'checker/Protect-RunDialog.ps1'), join(dist, 'Protect-RunDialog.ps1'));
-  console.log(`Packaged into dist/: ${zipName}, Check-ClickFix.ps1, Protect-RunDialog.ps1`);
+  // Checksums, so anyone can confirm a download is the file we released.
+  const { createHash } = await import('node:crypto');
+  const sums = readdirSync(dist).filter((f) => f !== 'SHA256SUMS.txt').sort()
+    .map((f) => `${createHash('sha256').update(readFileSync(join(dist, f))).digest('hex')}  ${f}`);
+  writeFileSync(join(dist, 'SHA256SUMS.txt'), sums.join('\n') + '\n');
+  console.log(`Packaged into dist/: ${zipName}, Check-ClickFix.ps1, Protect-RunDialog.ps1, SHA256SUMS.txt`);
 }

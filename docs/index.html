@@ -43,14 +43,14 @@
   </div>
 
   <div class="grid">
-    <div class="card"><span class="tag">Stop it</span><h3>Browser extension</h3><p>For Chrome and Edge. When a page tries to put an attack command on your clipboard, it swaps it for a harmless message and shows a clear warning. Installers copied by a page are paused until you choose Copy anyway.</p></div>
+    <div class="card"><span class="tag">Stop it</span><h3>Browser extension</h3><p>For Chrome and Edge. When a page tries to put an attack command on your clipboard, it swaps it for a harmless message and shows a clear warning. Installers copied by a page are paused until you choose Copy anyway. You can also paste a command into it to check it before you run it.</p></div>
     <div class="card"><span class="tag">Check it</span><h3>PC check</h3><p>A read-only Windows script that looks at your Run box, File Explorer and PowerShell history, new programs and startup items for signs of an attack.</p></div>
     <div class="card"><span class="tag">Fix it</span><h3>Recovery guide</h3><p>The exact steps, in the right order, to cut off stolen sign-ins from your phone and clean your PC.</p></div>
   </div>
 
   <h2 id="install">Install the browser extension</h2>
   <ol>
-    <li>Download <code>clickfix-first-aid-extension-v0.2.0.zip</code> from the <a href="#/releases/latest">latest release</a> and unzip it.</li>
+    <li>Download <code>clickfix-first-aid-extension-v0.3.0.zip</code> from the <a href="#/releases/latest">latest release</a> and unzip it.</li>
     <li>Open <code>chrome://extensions</code> (or <code>edge://extensions</code>) and switch on <strong>Developer mode</strong>.</li>
     <li>Click <strong>Load unpacked</strong> and choose the unzipped folder.</li>
     <li>Open the <a href="demo.html">safe demo</a> and tick the box. You should see a red warning.</li>
@@ -69,13 +69,13 @@
 
   <h2 id="privacy">Privacy</h2>
   <ul>
-    <li>The extension has no network access and sends nothing anywhere. Its only permission besides reading pages is local storage, for its own counters.</li>
+    <li>The extension has no network access and sends nothing anywhere. Its only permission besides reading pages is local storage, for its own counters and settings.</li>
     <li>The scripts are read-only, except the Win+R switch, which changes one setting for your user and can be undone.</li>
     <li>Everything is open source, so anyone can check this.</li>
   </ul>
 
   <footer>
-    ClickFix First Aid v0.2.0. Free and open source under the MIT license. <a href="#">Source code</a>.
+    ClickFix First Aid v0.3.0. Free and open source under the MIT license. <a href="#">Source code</a>.
   </footer>
 </main>
 </body>

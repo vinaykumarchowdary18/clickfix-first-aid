@@ -105,6 +105,15 @@
     }
   }
 
+  // Only real clicks by the person count. Our buttons sit in a closed shadow
+  // root the page cannot reach, and this is a second lock on the same door.
+  function trusted(fn) {
+    return function (e) {
+      if (!e || e.isTrusted !== true) return;
+      fn(e);
+    };
+  }
+
   var slots = { main: null, top: null };
 
   function clear(slot) {
@@ -153,21 +162,21 @@
 
     var row = el('div', { class: 'row' });
     var close = el('button', { class: 'primary', type: 'button' }, 'Close this tab');
-    close.addEventListener('click', function () { send('cfa-close-tab'); });
+    close.addEventListener('click', trusted(function () { send('cfa-close-tab'); }));
     var goBack = el('button', { class: 'secondary', type: 'button' }, 'Go back');
-    goBack.addEventListener('click', function () {
+    goBack.addEventListener('click', trusted(function () {
       if (history.length > 1) history.back();
       else send('cfa-close-tab');
-    });
+    }));
     row.appendChild(close);
     row.appendChild(goBack);
     card.appendChild(row);
 
     var foot = el('div', { class: 'foot' });
     var guide = el('button', { class: 'link', type: 'button' }, 'I already ran something like this. What now?');
-    guide.addEventListener('click', function () { send('cfa-open-guide'); });
+    guide.addEventListener('click', trusted(function () { send('cfa-open-guide'); }));
     var dismiss = el('button', { class: 'quiet', type: 'button' }, 'Dismiss');
-    dismiss.addEventListener('click', function () { clear('main'); });
+    dismiss.addEventListener('click', trusted(function () { clear('main'); }));
     foot.appendChild(guide);
     foot.appendChild(dismiss);
     card.appendChild(foot);
@@ -185,12 +194,16 @@
     var m = mount('held');
     slots.main = m;
 
+    var tooLong = info.rule === 'too-long';
+    var canCopy = handlers.canCopy !== false;
     var box = el('div', { class: 'panel', role: 'dialog', 'aria-labelledby': 'cfa-held', tabindex: '-1' });
-    box.appendChild(el('h2', { id: 'cfa-held' }, 'ClickFix First Aid paused a copied command'));
-    box.appendChild(el('p', null,
-      'This page copied a command that downloads and runs a program. Trap pages do this to make you paste it into Win+R or Terminal.'));
-    box.appendChild(el('p', null,
-      'If you copied it yourself from a site you trust, like developer documentation, you can copy it anyway.'));
+    box.appendChild(el('h2', { id: 'cfa-held' }, tooLong ? 'ClickFix First Aid paused a very long copy' : 'ClickFix First Aid paused a copied command'));
+    box.appendChild(el('p', null, tooLong
+      ? 'This page copied more text than we can check. A trap page could hide a command at the end of it.'
+      : 'This page copied a command that downloads and runs a program. Trap pages do this to make you paste it into Win+R or Terminal.'));
+    box.appendChild(el('p', null, canCopy
+      ? 'If you copied it yourself from a site you trust, like developer documentation, you can copy it anyway.'
+      : 'It is too long to copy from here. If you trust this site, select the text and copy it by hand.'));
     reasonList(box, info.reasons, 4);
 
     // Buttons come before the command preview, so Tab order is predictable:
@@ -199,18 +212,22 @@
     var anyway = el('button', { class: 'warnbtn', type: 'button' }, 'Copy anyway');
     var allow = el('button', { class: 'secondary', type: 'button' }, 'Always allow on this site');
     var dismiss = el('button', { class: 'quiet', type: 'button' }, 'Dismiss');
+    if (!canCopy) {
+      anyway.hidden = true;
+      allow.hidden = true;
+    }
     function done(message) {
       row.textContent = '';
       row.appendChild(el('p', null, message));
       setTimeout(function () { if (slots.main === m) clear('main'); }, 1800);
     }
-    anyway.addEventListener('click', function () {
+    anyway.addEventListener('click', trusted(function () {
       handlers.copyAnyway().then(function () { done('Copied.'); }, function () { done('Could not copy. Copy it by hand instead.'); });
-    });
-    allow.addEventListener('click', function () {
+    }));
+    allow.addEventListener('click', trusted(function () {
       handlers.allowSite().then(function () { done('Copied. This site will not be paused again.'); }, function () { done('Saved. Copy it again.'); });
-    });
-    dismiss.addEventListener('click', function () { clear('main'); });
+    }));
+    dismiss.addEventListener('click', trusted(function () { clear('main'); }));
     row.appendChild(anyway);
     row.appendChild(allow);
     row.appendChild(dismiss);
@@ -227,11 +244,13 @@
     slots.main = m;
     var box = el('div', { class: 'panel note', role: 'status' });
     box.appendChild(el('p', null,
-      'Heads up: this page copied a command that downloads and runs a program. ' +
+      (info.rule === 'too-long'
+        ? 'Heads up: this page copied more text than we can check. '
+        : 'Heads up: this page copied a command that downloads and runs a program. ') +
       'Never paste it into Win+R or Terminal just because a page asked you to "verify" something.'));
     var row = el('div', { class: 'row' });
     var ok = el('button', { class: 'secondary', type: 'button' }, 'Got it');
-    ok.addEventListener('click', function () { clear('main'); });
+    ok.addEventListener('click', trusted(function () { clear('main'); }));
     row.appendChild(ok);
     box.appendChild(row);
     m.shadow.appendChild(box);
@@ -249,9 +268,9 @@
       'Warning from ClickFix First Aid: this page is asking you to run something on your computer. ' +
       'Real human checks never ask you to press Win+R, open Terminal, or paste anything. Close this page.'));
     var close = el('button', { class: 'primary', type: 'button' }, 'Close this tab');
-    close.addEventListener('click', function () { send('cfa-close-tab'); });
+    close.addEventListener('click', trusted(function () { send('cfa-close-tab'); }));
     var dismiss = el('button', { class: 'secondary', type: 'button' }, 'Dismiss');
-    dismiss.addEventListener('click', function () { clear('top'); });
+    dismiss.addEventListener('click', trusted(function () { clear('top'); }));
     bar.appendChild(close);
     bar.appendChild(dismiss);
     m.shadow.appendChild(bar);

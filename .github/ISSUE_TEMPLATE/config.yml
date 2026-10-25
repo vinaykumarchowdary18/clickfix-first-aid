@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: A trap page or trick got past ClickFix First Aid
+    url: https://docs.github.com/en/code-security/how-tos/report-and-fix-vulnerabilities/report-a-vulnerability/privately-reporting-a-security-vulnerability
+    about: Please report bypasses privately with the "Report a vulnerability" button on this repository's Security tab, not as a public issue.

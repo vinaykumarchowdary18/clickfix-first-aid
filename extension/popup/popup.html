@@ -21,6 +21,14 @@
     <div><strong id="held">0</strong><span>copies paused</span></div>
   </section>
 
+  <section class="inspect" aria-labelledby="inspect-title">
+    <h2 id="inspect-title">Check a command</h2>
+    <label for="command">A site asked you to run something? Paste it here first. It is only read, never run, and it stays on this computer.</label>
+    <textarea id="command" rows="3" spellcheck="false" autocomplete="off" placeholder="Paste the command here"></textarea>
+    <button id="check" class="secondary" type="button">Check it</button>
+    <div id="result" role="status" aria-live="polite" hidden></div>
+  </section>
+
   <section>
     <h2>Recent</h2>
     <ul id="recent"><li class="empty">Nothing caught yet. That is good news.</li></ul>
@@ -34,6 +42,7 @@
 
   <section class="settings">
     <label><input id="hold" type="checkbox" checked> Pause copied commands that download and run programs, so I can check them first (recommended)</label>
+    <p id="settings-error" class="error" role="alert" hidden></p>
     <div id="allowed-wrap" hidden>
       <h2>Sites you allowed</h2>
       <ul id="allowed"></ul>
@@ -46,6 +55,8 @@
   </footer>
 
   <script src="../src/generated/config.js"></script>
+  <script src="../src/generated/rules.js"></script>
+  <script src="../src/generated/detector.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>
