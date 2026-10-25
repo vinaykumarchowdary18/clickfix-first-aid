@@ -214,6 +214,7 @@ Three good habits we used:
 - **Test first for a gap.** When a weakness was spotted, we first wrote a test for it and watched it **fail**, then fixed the code and watched it pass.
 - **Get an outside review, then verify it.** The Perplexity review was mostly right, but not completely. One suggested correction to the recovery guide (the Defender scan's name and duration) did not match Microsoft's own documentation, so it was not applied. Treat reviews like any other source: check them.
 - **Check a rewrite against your own tests.** The second review round came with a complete rewrite of the extension. Running our test samples through its engine showed it missed 2 of the 26 attack shapes, blocked 10 of our 11 legitimate installer and one-liner samples (on purpose: it has no Copy anyway), and could be switched off by a page that replaces `RegExp.prototype[Symbol.replace]`. So we kept our code and took its good ideas instead (see CHANGELOG.md).
+- **Antivirus reads your test files too.** Readable samples of disguised PowerShell made Microsoft Defender quarantine our test data file the first time the project was unzipped on Windows. The samples are now stored base64-encoded and decoded only in memory while the tests run. Security projects that keep attack samples usually do something like this.
 - **Make the slow case a test.** Speed problems hide until someone sends unlucky input. A test that times every pattern on hostile text keeps them from coming back.
 
 ## 9. Ideas for next versions (good places to contribute)

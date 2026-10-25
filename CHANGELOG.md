@@ -33,6 +33,10 @@ The fixes come with tests that fail on v0.2.0 and pass now. The one exception is
 - The browser test server listens on the local machine only and refuses paths outside the test folders (integration review).
 - The QA suite's detector contract run against this engine: 7 of 8 pass unmodified. The 8th expects non-text input to throw; this engine converts it to text, as the browser's clipboard functions do, so the guard checks exactly what the browser would write. The 7 cases now run in `npm test`.
 
+### Antivirus
+
+- **Microsoft Defender quarantined `tests/fixtures/commands.json`** as Trojan:PowerShell/Obfuse.HNAT!MTB when the project was unzipped on Windows. The file only holds test text that nothing runs, but it contained readable samples of disguised PowerShell, which is what Defender looks for. The samples are now stored base64-encoded and decoded in memory by the tests, and the few disguised samples written inside test code are encoded the same way. `node scripts/samples.mjs` lists them decoded and adds new ones. The extension and the Windows scripts were not flagged.
+
 ### Measured, not changed
 
 - Copy-time cost on huge pages (B6): copying a command on a page with 1,000 paragraphs adds about 10 to 30 ms, on 20,000 paragraphs about 60 ms, and on 100,000 paragraphs about 0.2 seconds (headless Chromium, Linux). Ordinary copies are not affected, because the page is only read when the copied text looks like a command. Caching the page reading was considered and rejected: a page can change what is visible without the change being noticed in time, and a stale "no trap here" is worse than a short delay.

