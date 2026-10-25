@@ -10,15 +10,16 @@ permissions:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    # Pinned: Playwright 1.56 supports Ubuntu 24.04, and ubuntu-latest is moving to Ubuntu 26.
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
         node: [22, 24]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: ${{ matrix.node }}
           cache: npm
@@ -33,10 +34,12 @@ jobs:
       - name: PowerShell checker tests
         shell: pwsh
         run: ./checker/tests/Run-Tests.ps1
-      - name: Browser tests (the real extension in Chromium)
+      - name: Install Chromium for the browser tests
         run: |
+          echo "::notice::$(lsb_release -ds 2>/dev/null || cat /etc/os-release | head -1)"
           npx playwright install --with-deps chromium
-          xvfb-run -a npm run test:e2e
+      - name: Browser tests (the real extension in Chromium)
+        run: xvfb-run -a npm run test:e2e
       - name: Build release files
         run: npm run package
       - uses: actions/upload-artifact@v4
@@ -49,7 +52,7 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Checker tests on Windows PowerShell 5.1
         shell: powershell
         run: .\checker\tests\Run-Tests.ps1
@@ -67,14 +70,16 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Scan the repository with Microsoft Defender
         shell: powershell
         run: |
-          try { Get-MpComputerStatus -ErrorAction Stop | Out-Null } catch { Write-Warning "Microsoft Defender is not available on this runner, so the scan was skipped: $($_.Exception.Message)"; exit 0 }
+          try { Get-MpComputerStatus -ErrorAction Stop | Out-Null } catch { Write-Host "::warning::Microsoft Defender is not available on this runner, so the scan was skipped: $($_.Exception.Message)"; exit 0 }
           try { Update-MpSignature -ErrorAction Stop } catch { Write-Warning "Could not update Defender signatures: $($_.Exception.Message)" }
+          $status = Get-MpComputerStatus
+          Write-Host ("Defender engine {0}, signatures {1} ({2})" -f $status.AMEngineVersion, $status.AntivirusSignatureVersion, $status.AntivirusSignatureLastUpdated)
           & "$env:ProgramFiles\Windows Defender\MpCmdRun.exe" -Scan -ScanType 3 -File "$env:GITHUB_WORKSPACE" -DisableRemediation
           $code = $LASTEXITCODE
-          Write-Host "MpCmdRun exit code: $code"
-          if ($code -eq 2) { Write-Error 'Microsoft Defender flagged a file in the repository. See the scan log above.'; exit 1 }
-          exit 0
+          if ($code -eq 2) { Write-Host '::error::Microsoft Defender flagged a file in the repository. See the scan log.'; exit 1 }
+          if ($code -ne 0) { Write-Host "::warning::Microsoft Defender scan did not finish (MpCmdRun exit code $code)."; exit 0 }
+          Write-Host ("::notice::Microsoft Defender scanned the repository and found nothing (signatures {0})." -f $status.AntivirusSignatureVersion)
