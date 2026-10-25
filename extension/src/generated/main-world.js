@@ -490,7 +490,7 @@ var HOLD_TEXT = '# PAUSED. ClickFix First Aid held this copied text so you can c
 var MAX_SEND = 1000000;
 var SEP = '\u001f';
 var programmaticCopy = false;
-var config = { hold: true, siteAllowed: false };
+var config = { hold: true, siteAllowed: false, quiet: false };
 
 function s(x) {
   return typeof x === 'string' ? x : x == null ? '' : _String(x);
@@ -518,6 +518,7 @@ var channel = null;
       var d = s(_detailGetter ? apply(_detailGetter, ev, []) : '');
       config.hold = apply(_indexOf, d, ['hold=0']) === -1;
       config.siteAllowed = apply(_indexOf, d, ['allow=1']) !== -1;
+      config.quiet = apply(_indexOf, d, ['quiet=1']) !== -1;
     }]);
   } catch (e) {
     channel = null;
@@ -588,6 +589,9 @@ function hiddenText() {
 // so it is only read when that could change the outcome.
 function analyzeThisPage(needHidden) {
   var visible = detector.analyzePage(visibleText());
+  // The project's own pages explain the attack in words; there, page text can
+  // never turn a copy into a block (attack commands themselves still can).
+  if (config.quiet) return { weak: visible.weak, strong: false };
   if (visible.strong) return { weak: true, strong: true };
   if (!needHidden || visible.weak) return { weak: visible.weak, strong: false };
   var hidden = detector.analyzePage(hiddenText());

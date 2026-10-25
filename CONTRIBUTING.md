@@ -7,6 +7,8 @@ Thank you for helping. The most useful contributions:
 3. **Translations** of the warnings (`extension/src/ui.js`) and the recovery guide (`guide/recovery.html`).
 4. **New platforms**: Firefox, a Mac version of the PC check.
 
+The fake trap pages for the browser tests are stored encoded in `tests/fixtures/pages.bundle.json`, because antivirus programs quarantine them as attack pages. `node scripts/fixtures.mjs unpack` writes them to `tests/fixtures/pages/` (ignored by git) so you can edit them; run `node scripts/fixtures.mjs pack` afterwards. Unpack them only somewhere your antivirus is set to skip, or in a test machine.
+
 ## Ground rules
 
 - Never commit live malware, real attacker URLs or working payloads. Test pages must only copy harmless commands such as `echo`.

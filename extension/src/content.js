@@ -19,6 +19,7 @@
   var topHost = computeTopHost();
   var settings = { holdInstallers: true, allowSites: [] };
   var channel = null;
+  var lastQuiet = false;
 
   function computeTopHost() {
     if (isTop) return location.hostname || '';
@@ -43,8 +44,9 @@
   function sendConfig() {
     if (!channel) return;
     var allowed = settings.allowSites.indexOf(topHost) !== -1;
+    lastQuiet = isTop && isQuietPage();
     channel.dispatchEvent(new CustomEvent('cfa-config', {
-      detail: 'hold=' + (settings.holdInstallers ? 1 : 0) + ';allow=' + (allowed ? 1 : 0)
+      detail: 'hold=' + (settings.holdInstallers ? 1 : 0) + ';allow=' + (allowed ? 1 : 0) + ';quiet=' + (lastQuiet ? 1 : 0)
     }));
   }
 
@@ -158,6 +160,7 @@
   // Same rule as the guard: only visible text can make a page "strong".
   function analyzeThisPage() {
     var v = detector.analyzePage(visibleText(false));
+    if (isTop && isQuietPage()) return { weak: v.weak, strong: false, runShortcut: v.runShortcut, paste: v.paste, verifyTheme: v.verifyTheme };
     if (v.strong || v.weak) return v;
     var h = detector.analyzePage(document.body ? textOf(document.body, 200000) : '');
     return { weak: h.weak, strong: false, runShortcut: h.runShortcut, paste: h.paste, verifyTheme: h.verifyTheme };
@@ -205,6 +208,26 @@
   }
 
   // ---- 3. Trap-page detection, in every frame. ------------------------------
+  // The project's own website and README explain the attack in words, so they
+  // would look like trap pages. Their exact addresses (built from package.json)
+  // skip this banner only; clipboard protection still runs on them.
+  function isQuietPage() {
+    try {
+      var q = (self.CFA_CONFIG && self.CFA_CONFIG.quietPages) || {};
+      var here = location.origin + location.pathname;
+      var lower = here.toLowerCase();
+      var exact = q.exact || [];
+      for (var i = 0; i < exact.length; i++) if (exact[i] === here || exact[i] === lower) return true;
+      var md = q.mdUnder || [];
+      for (var j = 0; j < md.length; j++) {
+        if (lower.indexOf(md[j]) === 0 && /\.md$/.test(lower)) return true;
+      }
+    } catch (e) {
+      /* not quiet */
+    }
+    return false;
+  }
+
   if (/^https?:$/.test(location.protocol) || (!isTop && location.protocol === 'about:')) {
     var scans = 0;
     var timer = null;
@@ -215,6 +238,10 @@
     var scan = function () {
       timer = null;
       if (flagged) return;
+      // Checked on every scan, because sites like GitHub change pages without reloading.
+      var quiet = isTop && isQuietPage();
+      if (quiet !== lastQuiet) sendConfig();
+      if (quiet) return;
       var deep = Date.now() < deepUntil;
       if (scans >= 60 && !deep) {
         if (observer) observer.disconnect();

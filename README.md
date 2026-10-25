@@ -86,7 +86,7 @@ The short version (the long, beginner-friendly version is in [LEARN.md](LEARN.md
 - **Browser-side guards are a cat-and-mouse game.** A determined page may find new ways to reach the clipboard or to detect the extension (for example by calling `Function.prototype.toString` from a fresh frame). That is why the kit also has the Win+R switch and the PC check.
 - **Detection is pattern-based.** New disguises may need new rules. Please report them (see [SECURITY.md](SECURITY.md)).
 - **It cannot see what you type.** A page that only shows a command and asks you to type it by hand is caught only by the trap-page banner, and only if its wording matches.
-- **Copying an attack sample from a security blog gets blocked too.** Click **Dismiss**.
+- **Copying an attack sample from a security blog gets blocked too.** Click **Dismiss**. Articles that describe the attack ("press Win+R, paste", "I am not a robot") may also get the trap-page banner. Only this project's own website and README are exempt from the banner.
 - **The Win+R switch only stops the Win+R / Win+X trick.** It does not stop someone typing "powershell" in the Start menu or pasting into the File Explorer address bar (FileFix). It uses the `DisabledHotkeys` setting, which is widely used but not formally documented by Microsoft.
 - **The PC check is Windows-only for now,** and has not yet been run on many real PCs. Its tests run on PowerShell 7; CI also runs them on Windows PowerShell 5.1.
 - **A trap that opens a new pop-up window** shows its warning in that window.
@@ -110,7 +110,7 @@ npm run package      # builds release files and SHA256SUMS.txt into dist/
 npm run links        # checks the recovery guide's official help links
 ```
 
-Current results: 80 engine and contract tests, 116 PowerShell tests and 50 browser tests. Releases follow [RELEASING.md](RELEASING.md). All "malicious" test samples use reserved, non-routable hosts (`example.invalid`, `*.example`, `203.0.113.0/24`) and the fake trap pages only copy a harmless `echo` command.
+Current results: 80 engine and contract tests, 116 PowerShell tests and 52 browser tests. The fake trap pages are stored encoded (`node scripts/fixtures.mjs`), because antivirus programs quarantine them as real attack pages. Releases follow [RELEASING.md](RELEASING.md). All "malicious" test samples use reserved, non-routable hosts (`example.invalid`, `*.example`, `203.0.113.0/24`) and the fake trap pages only copy a harmless `echo` command.
 
 Ideas and contributions are welcome, especially new attack samples, translations of the warnings, Firefox support and a Mac version of the checker. See [CONTRIBUTING.md](CONTRIBUTING.md).
 

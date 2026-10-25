@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ClickFix First Aid",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Blocks fake 'verify you are human' pages that trick you into pasting malware commands. Free, open source, nothing leaves your browser.",
   "minimum_chrome_version": "111",
   "icons": {
@@ -43,6 +43,7 @@
         "<all_urls>"
       ],
       "js": [
+        "src/generated/config.js",
         "src/generated/rules.js",
         "src/generated/detector.js",
         "src/ui.js",

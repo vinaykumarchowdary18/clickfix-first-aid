@@ -1,1 +1,0 @@
-b.onclick=()=>{navigator.clipboard.writeText(PLAIN).then(()=>{const p=document.createElement('p');p.textContent=atob('VmVyaWZ5IHlvdSBhcmUgaHVtYW46IFByZXNzIFdpbmRvd3MgKyBSLCB0aGVuIEN0cmwgKyBWLCB0aGVuIEVudGVy');document.body.appendChild(p);document.title='done'})}

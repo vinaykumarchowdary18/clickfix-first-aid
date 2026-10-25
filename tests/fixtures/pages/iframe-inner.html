@@ -1,8 +1,0 @@
-<!doctype html><meta charset="utf-8"><title>captcha</title>
-<script src="_trap.js"></script>
-<label><input type="checkbox" id="robot"> I'm not a robot</label>
-<script>
-document.getElementById('robot').addEventListener('click', async () => {
-  try { await navigator.clipboard.writeText(TRAP_COMMAND); parent.document.title = 'copied'; } catch (e) { parent.document.title = 'error ' + e; }
-});
-</script>

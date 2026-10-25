@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.3.1 (25 October 2026)
+
+Fixes found while testing v0.3.0 on a real Windows laptop and making the project video, before the first public release.
+
+- **The project's own pages set off the trap-page banner.** The website, the recovery guide and the README explain the attack in words (Win+R, paste, "I am not a robot"), so they looked like trap pages. Their exact addresses, built from `homepage` and `repository` in `package.json`, now skip the banner, and page text there cannot turn a copy into a block. Attack commands are still blocked on those pages, the demo page is deliberately not on the list, and the check runs again on every page change because GitHub switches pages without reloading. A browser test covers all of this, with a control run showing the banner without the list.
+- **Microsoft Defender flagged two fake test pages** as Trojan:HTML/FakeCaptcha.HU!MTB when the project was unzipped on Windows. All the fake trap pages used by the browser tests now live in one encoded file, `tests/fixtures/pages.bundle.json`, and the test server decodes them in memory, so they never exist on disk. `node scripts/fixtures.mjs unpack` and `pack` are for editing them. The last attack-shaped samples written directly in test code are base64-encoded too.
+- **The safe demo page** now builds its harmless command and its fake steps from encoded text at run time, so it does not look like an attack page to file scanners. It still blocks in exactly the same way.
+
 ## v0.3.0 (25 October 2026)
 
 This release comes from a second round of independent review with Perplexity (an architecture and risk analysis, a QA plan with contract tests, and a security and integration review, all in [reviews/](reviews/)), plus problems found while checking that round. The round also delivered a complete rewrite of the extension. It was not adopted: run against this project's test samples, its engine missed 2 of the 26 attack shapes, blocked 10 of the 11 legitimate installer and one-liner samples (by design), and could be switched off by a page replacing `RegExp.prototype[Symbol.replace]`. Its good ideas were taken instead, and are credited below.

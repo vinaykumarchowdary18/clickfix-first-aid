@@ -29,7 +29,28 @@ const rules = JSON.parse(rulesText);
 const rulesCompact = JSON.stringify(rules);
 const detectorSrc = read('engine/detector.js');
 const hookSrc = read('extension/src/page-hook.js');
-const config = { version: pkg.version, homepage: pkg.homepage || '', repository: pkg.repository || '' };
+const repoUrl = typeof pkg.repository === 'object' ? (pkg.repository && pkg.repository.url) || '' : pkg.repository || '';
+const config = { version: pkg.version, homepage: pkg.homepage || '', repository: repoUrl, quietPages: quietPages(pkg.homepage, repoUrl) };
+
+// The project's own pages explain the attack (Win+R, paste, "I am not a robot"),
+// so the trap-page banner would fire on them. These exact addresses, and only
+// these, skip the banner. Clipboard protection still runs there, and the demo
+// page is deliberately not on the list.
+function quietPages(homepage, repository) {
+  const exact = [];
+  const mdUnder = [];
+  if (homepage) {
+    const home = homepage.replace(/\/?$/, '/');
+    exact.push(home, home + 'index.html', home + 'recovery.html');
+  }
+  const m = /^(?:git\+)?https:\/\/github\.com\/([\w.-]+)\/([\w.-]+?)(?:\.git)?\/?$/i.exec(repository || '');
+  if (m) {
+    const repo = `https://github.com/${m[1]}/${m[2]}`.toLowerCase();
+    exact.push(repo, repo + '/', repo + '/tree/main');
+    mdUnder.push(repo + '/blob/main/');
+  }
+  return { exact, mdUnder };
+}
 
 // Every pattern must compile, or the build stops.
 for (const groups of [rules.command, rules.page]) {

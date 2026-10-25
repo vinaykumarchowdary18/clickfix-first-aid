@@ -1,9 +1,0 @@
-<!doctype html><meta charset="utf-8"><title>Normal</title>
-<h1>Share this link</h1>
-<button id="copy">Copy link</button>
-<script>
-document.getElementById('copy').addEventListener('click', async () => {
-  await navigator.clipboard.writeText('https://www.example.com/article?id=42');
-  document.title = 'copied';
-});
-</script>

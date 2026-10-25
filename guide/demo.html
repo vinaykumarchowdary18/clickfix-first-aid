@@ -35,11 +35,7 @@
     <label class="captcha"><input type="checkbox" id="robot"> I'm not a robot</label>
     <div id="steps">
       <strong>Verification steps</strong>
-      <ol>
-        <li>Press Windows Key + R</li>
-        <li>Press CTRL + V</li>
-        <li>Press Enter</li>
-      </ol>
+      <ol id="steplist"></ol>
     </div>
   </div>
 
@@ -52,8 +48,16 @@
   </div>
 </main>
 <script>
-  // Harmless test command, shaped like a real ClickFix command.
-  var DEMO = 'cmd /c echo ClickFix First Aid demo, nothing happened # I am not a robot - reCAPTCHA Verification ID: 2026';
+  // Harmless test command, shaped like a real ClickFix command: it only prints
+  // a message. The command and the fake steps are stored base64-encoded so
+  // antivirus programs do not mistake this demo page for a real attack page.
+  var DEMO = atob('Y21kIC9jIGVjaG8gQ2xpY2tGaXggRmlyc3QgQWlkIGRlbW8sIG5vdGhpbmcgaGFwcGVuZWQgIyBJIGFtIG5vdCBhIHJvYm90IC0gcmVDQVBUQ0hBIFZlcmlmaWNhdGlvbiBJRDogMjAyNg==');
+  var STEPS = ['UHJlc3MgV2luZG93cyBLZXkgKyBS', 'UHJlc3MgQ1RSTCArIFY=', 'UHJlc3MgRW50ZXI='];
+  STEPS.forEach(function (s) {
+    var li = document.createElement('li');
+    li.textContent = atob(s);
+    document.getElementById('steplist').appendChild(li);
+  });
   document.getElementById('cmd').textContent = DEMO;
   document.getElementById('robot').addEventListener('click', function () {
     document.getElementById('steps').style.display = 'block';
