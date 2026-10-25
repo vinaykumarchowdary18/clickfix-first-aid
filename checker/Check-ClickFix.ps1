@@ -43,7 +43,7 @@ param(
 Set-StrictMode -Version 2.0
 
 $CfaVersion = '0.3.1'
-$CfaGuideUrl = 'docs/recovery.html in the ClickFix First Aid download'
+$CfaGuideUrl = 'https://vinaykumarchowdary18.github.io/clickfix-first-aid/recovery.html'
 
 # Detection rules, generated from rules/clickfix-rules.json. Do not edit here.
 $CfaRulesJson = @'
