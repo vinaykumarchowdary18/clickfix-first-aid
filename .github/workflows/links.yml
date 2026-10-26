@@ -10,7 +10,8 @@ permissions:
 
 jobs:
   links:
-    runs-on: ubuntu-latest
+    # Pinned like the CI job: ubuntu-latest is moving to Ubuntu 26.
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
