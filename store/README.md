@@ -87,6 +87,8 @@ Leave every other type unticked. Then tick all three statements: no selling or t
 
 ```
 Open https://vinaykumarchowdary18.github.io/clickfix-first-aid/demo.html and click "I'm not a robot". The page copies a harmless test command (it only prints a message). ClickFix First Aid shows a "Stop. This page tried to trick you." warning, and the clipboard holds a harmless "# STOP." message instead. No account or sign-in is needed.
+
+How it works, so the behaviour is not mistaken for malware: a content script in the page's main world wraps the page's clipboard functions (navigator.clipboard.writeText and write, document.execCommand('copy'), and clipboardData.setData in copy events). When a page tries to copy a known attack command, the wrapper writes a visible warning message ("# STOP. ClickFix First Aid blocked this...") instead and shows a warning on the page. It never reads the clipboard in the background, has no network access, and contains no remote code. The source, tests and build are public at https://github.com/vinaykumarchowdary18/clickfix-first-aid.
 ```
 
 ## Distribution

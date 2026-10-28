@@ -294,11 +294,16 @@ for (const [name, clip, ui] of REVIEW) {
   });
 }
 
-test('the hook looks native to a simple toString check', async () => {
+test('the guard does not disguise itself, and a page that sees it still gets blocked', async () => {
+  // v0.3.3: the wrappers no longer pretend to be native code (that is a malware trick).
   const page = await open('review/detect.html');
   await page.click('#b');
   await page.waitForFunction(() => document.title.startsWith('done'), null, { timeout: 5000 });
-  assert.equal(await page.title(), 'done native');
+  assert.equal(await page.title(), 'done HOOKED');
+  await setClipboard(page, 'before');
+  await page.evaluate((t) => navigator.clipboard.writeText(t), unb64('Y21kIC9jIGVjaG8gdGVzdCAjIEkgYW0gbm90IGEgcm9ib3QgLSByZUNBUFRDSEEgVmVyaWZpY2F0aW9uIElEOiAxMjM0'));
+  await waitUi(page, 'blocked');
+  assert.ok((await clipboard(page)).startsWith(SAFE));
   await page.close();
 });
 

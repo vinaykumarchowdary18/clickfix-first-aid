@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.3.3 (28 October 2026)
+
+Microsoft Edge Add-ons review failed v0.3.2 with "detection of malware within the package", without naming a file or a reason. The extension contains no malware: Microsoft Defender found nothing in it, both in the scan of this repository on GitHub and on a Windows PC where the extension was unzipped and used. One part of it did use a technique that malware also uses, so it is gone.
+
+- **The clipboard guard no longer disguises itself.** Since v0.2.0, the wrapped clipboard functions replaced `Function.prototype.toString` on every page so that the wrappers looked like built-in browser code. Hiding from the page is what malicious extensions do, and automated store reviews look for it. The wrappers now keep only their original names and argument counts. A page can see that the extension is guarding the clipboard, which does not help it get past the check: every copy is still checked. The browser test that expected the disguise now checks the opposite, and that a page which sees the guard is still blocked.
+- **Weekly link check** (merged 26 October): each problem link is now named on the run page, and sites that cannot be reached from GitHub's servers (for example Indian government sites that time out from abroad) are listed for a manual look instead of failing the check. The job runs on Ubuntu 24.04, like CI.
+
 ## v0.3.2 (25 October 2026)
 
 Getting ready for the Chrome Web Store. The protection itself is unchanged.
