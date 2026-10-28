@@ -42,14 +42,17 @@ This project started in October 2026, after a fake "I'm not a robot" page tricke
 
 ## Install
 
-### Browser extension (Chrome or Edge)
+### Browser extension
 
-Until it is published in the browser stores:
+**Microsoft Edge:** install it from the [Microsoft Edge Add-ons store](https://microsoftedge.microsoft.com/addons/detail/adghmlcmbimmjfjofhgndnoccnpgenmh).
+
+**Chrome** (until it is in the Chrome Web Store):
 
 1. Download `clickfix-first-aid-extension-vX.Y.Z.zip` from the [latest release](../../releases/latest) and unzip it.
-2. Open `chrome://extensions` (or `edge://extensions`) and turn on **Developer mode**.
+2. Open `chrome://extensions` and turn on **Developer mode**.
 3. Click **Load unpacked** and choose the unzipped folder.
-4. Open the safe demo page (`docs/demo.html`, or the project website) and tick the box. You should see the red warning.
+
+Then open the safe demo page (`docs/demo.html`, or the project website) and tick the box. You should see the red warning.
 
 ### PC check (Windows)
 

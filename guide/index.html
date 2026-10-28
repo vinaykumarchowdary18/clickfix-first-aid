@@ -37,7 +37,8 @@
   <h1>Fake "I am not a robot" pages are stealing accounts. This stops them.</h1>
   <p class="lead">A ClickFix page pretends to be a CAPTCHA, secretly copies a command, and tells you to press Win+R, paste and press Enter. That one paste installs malware that steals your logins. ClickFix First Aid blocks the trick, checks whether your PC already fell for it, and walks you through recovery.</p>
   <div class="cta">
-    <a class="btn primary" href="{{REPOSITORY}}/releases/latest">Download</a>
+    <a class="btn primary" href="https://microsoftedge.microsoft.com/addons/detail/adghmlcmbimmjfjofhgndnoccnpgenmh">Get it for Microsoft Edge</a>
+    <a class="btn" href="{{REPOSITORY}}/releases/latest">Download for Chrome</a>
     <a class="btn" href="demo.html">Try the safe demo</a>
     <a class="btn" href="recovery.html">I already ran something</a>
   </div>
@@ -49,12 +50,14 @@
   </div>
 
   <h2 id="install">Install the browser extension</h2>
+  <p><strong>Microsoft Edge:</strong> install it from the <a href="https://microsoftedge.microsoft.com/addons/detail/adghmlcmbimmjfjofhgndnoccnpgenmh">Microsoft Edge Add-ons store</a>.</p>
+  <p><strong>Chrome</strong>, until it is in the Chrome Web Store:</p>
   <ol>
     <li>Download <code>clickfix-first-aid-extension-v{{VERSION}}.zip</code> from the <a href="{{REPOSITORY}}/releases/latest">latest release</a> and unzip it.</li>
-    <li>Open <code>chrome://extensions</code> (or <code>edge://extensions</code>) and switch on <strong>Developer mode</strong>.</li>
+    <li>Open <code>chrome://extensions</code> and switch on <strong>Developer mode</strong>.</li>
     <li>Click <strong>Load unpacked</strong> and choose the unzipped folder.</li>
-    <li>Open the <a href="demo.html">safe demo</a> and tick the box. You should see a red warning.</li>
   </ol>
+  <p>Then open the <a href="demo.html">safe demo</a> and tick the box. You should see a red warning.</p>
 
   <h2 id="check-your-pc">Check your Windows PC</h2>
   <ol>
