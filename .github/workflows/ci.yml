@@ -81,20 +81,13 @@ jobs:
           $out = & "$env:ProgramFiles\Windows Defender\MpCmdRun.exe" -Scan -ScanType 3 -File "$env:GITHUB_WORKSPACE" -DisableRemediation 2>&1
           $code = $LASTEXITCODE
           $out | ForEach-Object { Write-Host $_ }
+          # If Defender itself failed to run (for example "CmdTool: Failed with hr = 0x800106ba"),
+          # nothing was scanned: say so, but do not report it as a detection.
+          $toolError = $out | Where-Object { "$_" -match 'CmdTool: Failed with hr' } | Select-Object -First 1
+          if ($toolError) { Write-Host ("::warning::Microsoft Defender could not run on this runner, so the repository was not scanned: {0}" -f "$toolError".Trim()); exit 0 }
           if ($code -eq 2) {
-            # Name each detection and file on the run page, so nobody needs the raw log.
-            $names = @{}
-            try { Get-MpThreat -ErrorAction Stop | ForEach-Object { $names[[string]$_.ThreatID] = $_.ThreatName } } catch { }
-            try {
-              Get-MpThreatDetection -ErrorAction Stop | ForEach-Object {
-                $name = $names[[string]$_.ThreatID]
-                foreach ($r in @($_.Resources)) {
-                  $file = ([string]$r) -replace '^[a-z]+:_', '' -replace [regex]::Escape($env:GITHUB_WORKSPACE + '\'), ''
-                  Write-Host ("::error title=Defender: {0}::{1}" -f $name, $file)
-                }
-              }
-            } catch { Write-Host "::warning::Could not list Defender detections: $($_.Exception.Message)" }
             # MpCmdRun prints "Threat : <name>" followed by the file it was found in.
+            # Name each one on the run page, so nobody needs the raw log.
             $threat = ''
             $shown = 0
             foreach ($line in $out) {
