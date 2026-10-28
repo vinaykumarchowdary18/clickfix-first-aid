@@ -80,6 +80,21 @@ jobs:
           Write-Host ("Defender engine {0}, signatures {1} ({2})" -f $status.AMEngineVersion, $status.AntivirusSignatureVersion, $status.AntivirusSignatureLastUpdated)
           & "$env:ProgramFiles\Windows Defender\MpCmdRun.exe" -Scan -ScanType 3 -File "$env:GITHUB_WORKSPACE" -DisableRemediation
           $code = $LASTEXITCODE
-          if ($code -eq 2) { Write-Host '::error::Microsoft Defender flagged a file in the repository. See the scan log.'; exit 1 }
+          if ($code -eq 2) {
+            # Name each detection and file on the run page, so nobody needs the raw log.
+            $names = @{}
+            try { Get-MpThreat -ErrorAction Stop | ForEach-Object { $names[[string]$_.ThreatID] = $_.ThreatName } } catch { }
+            try {
+              Get-MpThreatDetection -ErrorAction Stop | ForEach-Object {
+                $name = $names[[string]$_.ThreatID]
+                foreach ($r in @($_.Resources)) {
+                  $file = ([string]$r) -replace '^[a-z]+:_', '' -replace [regex]::Escape($env:GITHUB_WORKSPACE + '\'), ''
+                  Write-Host ("::error title=Defender: {0}::{1}" -f $name, $file)
+                }
+              }
+            } catch { Write-Host "::warning::Could not list Defender detections: $($_.Exception.Message)" }
+            Write-Host '::error::Microsoft Defender flagged a file in the repository.'
+            exit 1
+          }
           if ($code -ne 0) { Write-Host "::warning::Microsoft Defender scan did not finish (MpCmdRun exit code $code)."; exit 0 }
           Write-Host ("::notice::Microsoft Defender scanned the repository and found nothing (signatures {0})." -f $status.AntivirusSignatureVersion)
