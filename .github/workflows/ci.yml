@@ -78,9 +78,14 @@ jobs:
           try { Update-MpSignature -ErrorAction Stop } catch { Write-Warning "Could not update Defender signatures: $($_.Exception.Message)" }
           $status = Get-MpComputerStatus
           Write-Host ("Defender engine {0}, signatures {1} ({2})" -f $status.AMEngineVersion, $status.AntivirusSignatureVersion, $status.AntivirusSignatureLastUpdated)
-          $out = & "$env:ProgramFiles\Windows Defender\MpCmdRun.exe" -Scan -ScanType 3 -File "$env:GITHUB_WORKSPACE" -DisableRemediation 2>&1
-          $code = $LASTEXITCODE
-          $out | ForEach-Object { Write-Host $_ }
+          # Defender sometimes needs a moment after a signature update; try up to three times.
+          for ($try = 1; $try -le 3; $try++) {
+            $out = & "$env:ProgramFiles\Windows Defender\MpCmdRun.exe" -Scan -ScanType 3 -File "$env:GITHUB_WORKSPACE" -DisableRemediation 2>&1
+            $code = $LASTEXITCODE
+            $out | ForEach-Object { Write-Host $_ }
+            if (-not ($out | Where-Object { "$_" -match 'CmdTool: Failed with hr' })) { break }
+            if ($try -lt 3) { Write-Host "Defender could not start the scan; waiting 30 seconds before trying again."; Start-Sleep -Seconds 30 }
+          }
           # If Defender itself failed to run (for example "CmdTool: Failed with hr = 0x800106ba"),
           # nothing was scanned: say so, but do not report it as a detection.
           $toolError = $out | Where-Object { "$_" -match 'CmdTool: Failed with hr' } | Select-Object -First 1
