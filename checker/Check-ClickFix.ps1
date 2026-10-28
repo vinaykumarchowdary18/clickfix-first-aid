@@ -29,7 +29,7 @@
     Do not wait for Enter before closing.
 
 .NOTES
-    ClickFix First Aid v0.3.2 - free and open source (MIT license).
+    ClickFix First Aid v0.3.3 - free and open source (MIT license).
     Exit codes: 0 = nothing found, 1 = things to review, 2 = signs of an attack.
 #>
 [CmdletBinding()]
@@ -42,7 +42,7 @@ param(
 
 Set-StrictMode -Version 2.0
 
-$CfaVersion = '0.3.2'
+$CfaVersion = '0.3.3'
 $CfaGuideUrl = 'https://vinaykumarchowdary18.github.io/clickfix-first-aid/recovery.html'
 
 # Detection rules, generated from rules/clickfix-rules.json. Do not edit here.

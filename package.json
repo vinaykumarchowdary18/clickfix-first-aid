@@ -1,6 +1,6 @@
 {
   "name": "clickfix-first-aid",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Stops ClickFix 'verify you are human' attacks, checks if your PC already ran one, and tells you exactly what to do next.",
   "private": true,
   "license": "MIT",

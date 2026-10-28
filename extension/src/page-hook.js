@@ -35,11 +35,6 @@ var objectCreate = Object.create;
 var getPrototypeOf = Object.getPrototypeOf;
 var _String = String;
 var _CustomEvent = CustomEvent;
-var _WeakMap = WeakMap;
-var _wmGet = WeakMap.prototype.get;
-var _wmSet = WeakMap.prototype.set;
-var _wmHas = WeakMap.prototype.has;
-var _fnToString = Function.prototype.toString;
 var _dispatchEvent = EventTarget.prototype.dispatchEvent;
 var _addEventListener = EventTarget.prototype.addEventListener;
 var _preventDefault = Event.prototype.preventDefault;
@@ -278,27 +273,24 @@ function replacementFor(verdict) {
   return verdict === 'block' ? SAFE_TEXT : HOLD_TEXT;
 }
 
-// ---- Wrapping built-in functions, and keeping them looking native. ----------
-var nativeLook = new _WeakMap();
-
+// ---- Wrapping built-in clipboard functions. -----------------------------------
+// The wrappers keep the original name and argument count so pages keep working.
+// They deliberately do not disguise themselves: a page that inspects them (for
+// example with toString()) can see that ClickFix First Aid is guarding the
+// clipboard. Hiding that would be the kind of trick malware uses, and browser
+// stores rightly treat it as such. Seeing the guard does not help a page get
+// past it: every copy still goes through the check.
 function wrap(proto, name, fn) {
   try {
     var desc = getOwnPropertyDescriptor(proto, name);
     if (!desc || typeof desc.value !== 'function') return;
     defineProperty(fn, 'name', { value: name, configurable: true });
     defineProperty(fn, 'length', { value: desc.value.length, configurable: true });
-    apply(_wmSet, nativeLook, [fn, 'function ' + name + '() { [native code] }']);
     defineProperty(proto, name, { value: fn, writable: desc.writable, enumerable: desc.enumerable, configurable: desc.configurable });
   } catch (e) {
     /* ignore */
   }
 }
-
-// Detection by toString() is a cat-and-mouse game; this covers the easy check.
-wrap(Function.prototype, 'toString', function toString() {
-  if (apply(_wmHas, nativeLook, [this])) return apply(_wmGet, nativeLook, [this]);
-  return apply(_fnToString, this, arguments);
-});
 
 // 1. navigator.clipboard.writeText. The text is converted to a string exactly
 // once, so a page cannot show us one thing and give the browser another.

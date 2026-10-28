@@ -83,7 +83,7 @@ The short version (the long, beginner-friendly version is in [LEARN.md](LEARN.md
 
 ## Limitations (honest list)
 
-- **Browser-side guards are a cat-and-mouse game.** A determined page may find new ways to reach the clipboard or to detect the extension (for example by calling `Function.prototype.toString` from a fresh frame). That is why the kit also has the Win+R switch and the PC check.
+- **Browser-side guards are a cat-and-mouse game.** A determined page may find new ways to reach the clipboard. A page can also see that the extension is there: the clipboard guard does not disguise itself, because hiding would be a malware-style trick. Seeing it does not get a page past the check. That is why the kit also has the Win+R switch and the PC check.
 - **Detection is pattern-based.** New disguises may need new rules. Please report them (see [SECURITY.md](SECURITY.md)).
 - **It cannot see what you type.** A page that only shows a command and asks you to type it by hand is caught only by the trap-page banner, and only if its wording matches.
 - **Copying an attack sample from a security blog gets blocked too.** Click **Dismiss**. Articles that describe the attack ("press Win+R, paste", "I am not a robot") may also get the trap-page banner. Only this project's own website and README are exempt from the banner.

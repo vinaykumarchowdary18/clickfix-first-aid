@@ -36,7 +36,7 @@
     Restart File Explorer without asking.
 
 .NOTES
-    ClickFix First Aid v0.3.2 - free and open source (MIT license).
+    ClickFix First Aid v0.3.3 - free and open source (MIT license).
 #>
 [CmdletBinding()]
 param(
@@ -188,7 +188,7 @@ function Show-CfaStatus {
 
 if ($MyInvocation.InvocationName -ne '.') {
     Write-Host ''
-    Write-Host ' ClickFix First Aid - Win+R / Win+X protection (v0.3.2)' -ForegroundColor White
+    Write-Host ' ClickFix First Aid - Win+R / Win+X protection (v0.3.3)' -ForegroundColor White
 
     if (-not $Mode) {
         Show-CfaStatus
