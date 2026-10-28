@@ -78,8 +78,9 @@ jobs:
           try { Update-MpSignature -ErrorAction Stop } catch { Write-Warning "Could not update Defender signatures: $($_.Exception.Message)" }
           $status = Get-MpComputerStatus
           Write-Host ("Defender engine {0}, signatures {1} ({2})" -f $status.AMEngineVersion, $status.AntivirusSignatureVersion, $status.AntivirusSignatureLastUpdated)
-          & "$env:ProgramFiles\Windows Defender\MpCmdRun.exe" -Scan -ScanType 3 -File "$env:GITHUB_WORKSPACE" -DisableRemediation
+          $out = & "$env:ProgramFiles\Windows Defender\MpCmdRun.exe" -Scan -ScanType 3 -File "$env:GITHUB_WORKSPACE" -DisableRemediation 2>&1
           $code = $LASTEXITCODE
+          $out | ForEach-Object { Write-Host $_ }
           if ($code -eq 2) {
             # Name each detection and file on the run page, so nobody needs the raw log.
             $names = @{}
@@ -93,6 +94,19 @@ jobs:
                 }
               }
             } catch { Write-Host "::warning::Could not list Defender detections: $($_.Exception.Message)" }
+            # MpCmdRun prints "Threat : <name>" followed by the file it was found in.
+            $threat = ''
+            $shown = 0
+            foreach ($line in $out) {
+              $t = [string]$line
+              if ($t -match 'Threat\s*:\s*(.+)$') { $threat = $Matches[1].Trim() }
+              elseif ($t -match '(?:file|containerfile)\s*:\s*(.+)$') {
+                $file = $Matches[1].Trim().Replace($env:GITHUB_WORKSPACE + '\', '')
+                Write-Host ("::error title=Defender: {0}::{1}" -f $threat, $file)
+                $shown++
+              }
+            }
+            if ($shown -eq 0) { $out | Where-Object { "$_".Trim() } | Select-Object -First 30 | ForEach-Object { Write-Host ("::warning title=Defender output::{0}" -f "$_".Trim()) } }
             Write-Host '::error::Microsoft Defender flagged a file in the repository.'
             exit 1
           }
