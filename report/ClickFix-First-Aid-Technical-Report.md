@@ -240,10 +240,10 @@ Every tool whose code is published and that intercepts clipboard writes automati
 
 **What the numbers show**
 
-- **Fake verification pages.** ClickFix First Aid stopped all 25 attacks, ClickFix Guard (samdem-ai) 24, ClickFix Warden 23 and ClickFix Mitigator 22. They missed different commands: ClickFix Guard (samdem-ai) missed H08 (a `cmd` line that assembles `pushd` and `rundll32` from variables to load a file from a WebDAV share), ClickFix Warden missed H06 and H08, and ClickFix Mitigator missed H02, H04 and H24 (two commands broken up with `^` characters, and a short `iex (irm …)` PowerShell command that downloads and runs a script). ClickFix First Aid stopped all of them because, on a page with trap instructions, it blocks any command that is copied (section 4.3).
+- **Fake verification pages.** ClickFix First Aid stopped all 25 attacks, ClickFix Guard (samdem-ai) 24, ClickFix Warden 23 and ClickFix Mitigator 22. They missed different commands: ClickFix Guard (samdem-ai) missed H08 (a `cmd` line that assembles `pushd` and `rundll32` from variables to load a file from a WebDAV share), ClickFix Warden missed H06 and H08, and ClickFix Mitigator missed H02, H04 and H24 (two commands broken up with `^` characters, and a short PowerShell command that downloads and runs a script). ClickFix First Aid stopped all of them because, on a page with trap instructions, it blocks any command that is copied (section 4.3).
 - **No instructions on the page.** ClickFix Mitigator stopped 22 of 25, ClickFix Guard (samdem-ai) 21, ClickFix First Aid 20 (12 blocked, 8 paused for confirmation) and ClickFix Warden 8. ClickFix First Aid missed H06, H08, H13, H18 and H19; ClickFix Guard (samdem-ai) missed H05, H07, H08 and H19; ClickFix Mitigator missed H02, H04 and H24. H08 and H19 were stopped only by ClickFix Mitigator.
 - **Clipboard write methods.** Only ClickFix First Aid stopped the attack with all five methods. ClickFix Guard (samdem-ai) and ClickFix Warden let it through when the page wrote it with `clipboardData.items.add` inside a copy event; ClickFix Mitigator let it through with `navigator.clipboard.write` and with `clipboardData.items.add`. StopFix stopped only the `document.execCommand('copy')` case.
-- **Ordinary commands.** ClickFix Mitigator blocked 7 of the 24 ordinary commands: all six installer one-liners and `oh-my-posh init pwsh | Invoke-Expression`. Its on-page notice has only a **Close** button and offers no way to copy the command anyway; allow and block lists are managed in the extension's own settings [24]. ClickFix First Aid paused the six installer one-liners and copied each with one click on **Copy anyway**. The other tools copied all 24 unchanged.
+- **Ordinary commands.** ClickFix Mitigator blocked 7 of the 24 ordinary commands: all six installer one-liners and the Oh My Posh prompt setup command (B07). Its on-page notice has only a **Close** button and offers no way to copy the command anyway; allow and block lists are managed in the extension's own settings [24]. ClickFix First Aid paused the six installer one-liners and copied each with one click on **Copy anyway**. The other tools copied all 24 unchanged.
 - **ClickFix Mitigator settings.** Its setting "Block all JavaScript clipboard copying" is on by default [24], but ordinary commands were still copied, so blocking of every page copy did not take effect in this test. With the setting switched off, the extension does not load its page script, and none of the 50 attacks written with `navigator.clipboard.writeText` was stopped (second Mitigator row).
 - **Warn-only designs.** Three tools warn but leave the command on the clipboard, so a visitor who pastes anyway still runs it, and the harness counts the attack as delivered. ClickFix Guard (frameman) replaced the page with a full-screen "ClickFix scam blocked" warning in 23 of the 30 cases on fake verification pages, and did not replace any documentation page. ClickFix Guard (samurayski) showed a warning banner. StopFix showed a dialog in Spanish with **Ignorar** (ignore) and **Limpiar clipboard** (clear clipboard) buttons; the command stays on the clipboard unless the user clicks the second button. Screenshots of every tool on the same three cases are published with the results.
 - **Timing.** A first run clicked as soon as each page had loaded. Two tools behaved differently in that run: ClickFix Mitigator, which starts checking a moment after a page loads, stopped 17 and 1 of 25 attacks instead of 22 and 22, and ClickFix Guard (frameman) showed its warning in all 30 cases. The results above come from the final run, in which the harness waited one second before each click, as a person reading the page would. The results of the other tools were the same in both runs. Both runs are published.
@@ -334,16 +334,18 @@ Kinds: **V** command shape as published, with indicators replaced by reserved na
 
 ## Appendix B. Ordinary commands
 
+Commands that download and run a script, run text as code, or change PowerShell's script policy are listed by name (in italics) rather than printed, because email and antivirus scanners flag documents that contain such commands as text, even when they are official installers. The exact text of every command is in `benchmark/samples.json`.
+
 | ID | Command | Type | Source | ClickFix First Aid |
 |---|---|---|---|---|
-| B01 | `powershell -c "irm bun.sh/install.ps1\|iex"` | Installer | [docs](https://bun.sh/docs/installation) | Paused |
-| B02 | `irm https://deno.land/install.ps1 \| iex` | Installer | [docs](https://docs.deno.com/runtime/getting_started/installation/) | Paused |
-| B03 | `curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh \| bash` | Installer | [docs](https://github.com/nvm-sh/nvm) | Paused |
-| B04 | `curl -fsSL https://ollama.com/install.sh \| sh` | Installer | [docs](https://ollama.com/download/linux) | Paused |
-| B05 | `curl -LsSf https://astral.sh/uv/install.sh \| sh` | Installer | [docs](https://docs.astral.sh/uv/getting-started/installation/) | Paused |
-| B06 | `iex "& { $(irm https://aka.ms/install-powershell.ps1) } -UseMSI"` | Installer | [docs](https://learn.microsoft.com/powershell/scripting/install/installing-powershell-on-windows) | Paused |
-| B07 | `oh-my-posh init pwsh \| Invoke-Expression` | Plain | [docs](https://ohmyposh.dev/docs/installation/prompt) | Copied |
-| B08 | `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser` | Plain | [docs](https://scoop.sh/) | Copied |
+| B01 | *Bun installer (Windows)* | Installer | [docs](https://bun.sh/docs/installation) | Paused |
+| B02 | *Deno installer (Windows)* | Installer | [docs](https://docs.deno.com/runtime/getting_started/installation/) | Paused |
+| B03 | *nvm installer* | Installer | [docs](https://github.com/nvm-sh/nvm) | Paused |
+| B04 | *Ollama installer (Linux)* | Installer | [docs](https://ollama.com/download/linux) | Paused |
+| B05 | *uv installer (macOS and Linux)* | Installer | [docs](https://docs.astral.sh/uv/getting-started/installation/) | Paused |
+| B06 | *PowerShell 7 installer* | Installer | [docs](https://learn.microsoft.com/powershell/scripting/install/installing-powershell-on-windows) | Paused |
+| B07 | *Oh My Posh prompt setup* | Plain | [docs](https://ohmyposh.dev/docs/installation/prompt) | Copied |
+| B08 | *Scoop prerequisite: execution policy* | Plain | [docs](https://scoop.sh/) | Copied |
 | B09 | `winget install --id Git.Git -e --source winget` | Plain | [docs](https://git-scm.com/download/win) | Copied |
 | B10 | `npm install -g pnpm` | Plain | general use | Copied |
 | B11 | `python -m pip install --upgrade pip` | Plain | general use | Copied |
