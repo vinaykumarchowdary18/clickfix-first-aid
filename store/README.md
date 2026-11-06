@@ -61,7 +61,7 @@ Protects people from ClickFix attacks: fake "I'm not a robot" pages that put a m
 **Justification for `storage`:**
 
 ```
-Stores the user's settings (whether to pause install commands, and the sites they chose to always allow), the counters and the last 20 warnings shown in the popup, and, for each open tab, whether it showed trap instructions or had a copy paused (chrome.storage.session), so warnings keep working when the background service worker restarts. Nothing is sent anywhere.
+Stores the user's settings (whether to pause install commands, and the sites they chose to always allow), the counters and the last 20 warnings shown in the popup, and, for each open tab, whether it showed trap instructions or had a copy paused, with a short preview of a paused copy (chrome.storage.session, memory only, cleared when the tab closes or the browser closes), so warnings keep working when the background service worker restarts. Nothing is sent anywhere.
 ```
 
 **Justification for host permissions** (the content scripts run on all sites):

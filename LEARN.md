@@ -37,7 +37,7 @@ docs/                         The published website (generated)
 tests/                        All tests and harmless fake trap pages
 scripts/build.mjs             Turns the sources into the finished files
 scripts/check-links.mjs       Checks that the guide's official help links still work
-reviews/                      The independent reviews, as PDFs
+reviews/                      The external (AI-produced) reviews, as PDFs
 ```
 
 **Single source of truth:** you edit the rules once in `rules/clickfix-rules.json`. The build script (`npm run build`) copies them into the extension and embeds them inside the PowerShell checker. So the browser and the PC check always make the same decisions.
@@ -193,7 +193,7 @@ Windows has a per-user setting called `DisabledHotkeys` under `HKCU\Software\Mic
 
 ## 7. Part 4: the recovery guide
 
-`guide/recovery.html` is the plan that worked in a real incident, in order:
+`guide/recovery.html` is a step-by-step recovery plan, in this order:
 
 1. Disconnect the PC.
 2. From the **phone**, secure email first, because email can reset everything else.
@@ -207,7 +207,7 @@ Every menu path in it was checked against the official help pages of Google, Mic
 
 | Command | What it checks |
 |---|---|
-| `npm test` | 80 engine tests: 26 attack shapes are blocked, 21 normal things are allowed, 11 installers are held, page detection in several phrasings and languages, frames, tamper resistance, long-text padding, pattern speed, and 7 contract cases from the independent QA suite. |
+| `npm test` | 80 engine tests: 26 attack shapes are blocked, 21 normal things are allowed, 11 installers are held, page detection in several phrasings and languages, frames, tamper resistance, long-text padding, pattern speed, and 7 contract cases from the external QA suite. |
 | `npm run test:ps` | 116 PowerShell tests: the checker makes the **same decisions** as the JavaScript engine on all 58 shared samples, whole-PC analysis with fake evidence, installer-log fields, the Win+R helper, and scripts parse and are pure ASCII. |
 | `npm run test:e2e` | 52 tests that load the real extension into Chromium: all five copy methods, frames, late or hidden steps, Copy anyway (including very long text), Always allow, copying by hand, a page hijacking a hand copy, the background worker being stopped mid-attack, the popup's command check and settings, the no-network rule for extension pages, and the 24 proof-of-concept pages from the security review. |
 

@@ -16,6 +16,7 @@
     "test:ps": "pwsh -NoLogo -NoProfile -File checker/tests/Run-Tests.ps1",
     "package": "node scripts/build.mjs --package",
     "links": "node scripts/check-links.mjs",
+    "bench": "node benchmark/run.mjs --ext extension --label \"ClickFix First Aid\"",
     "audit:deps": "npm audit --audit-level=moderate"
   },
   "engines": {

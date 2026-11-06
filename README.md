@@ -34,11 +34,11 @@ Plus an optional switch, `Protect-RunDialog.ps1`, that turns off the Win+R and W
 
 ClickFix is one of the most common ways attackers get in today:
 
-- Microsoft's Digital Defense Report 2025 found ClickFix behind **47% of initial-access incidents** its Defender Experts team handled over the year ([source](https://www.androidheadlines.com/2025/10/microsoft-warns-rising-clickfix-attacks-are-fooling-users-into-running-malware.html)).
-- ReliaQuest attributed **nearly 28% of defense-evasion activity** to ClickFix between March and May 2026 ([source](https://www.darkreading.com/vulnerabilities-threats/winner-dominant-malware-delivery-clickfix)).
+- Microsoft's Digital Defense Report 2025 names ClickFix the **most common initial access method** in Microsoft Defender Experts notifications over the year, at **47% of attacks** ([report, p. 36](https://cdn-dynmedia-1.microsoft.com/is/content/microsoftcorp/microsoft/msc/documents/presentations/CSR/Microsoft-Digital-Defense-Report-2025.pdf)).
+- ReliaQuest found that ClickFix **led initial access** in its incident data from March to May 2026, and that the two obfuscation techniques that fingerprint it made up **nearly 28% of defense-evasion activity** ([source](https://reliaquest.com/blog/threat-spotlight-whats-trending-top-cyber-attacker-techniques-march-may-2026/)).
 - Variants keep appearing: "FileFix" uses the File Explorer address bar instead of Win+R, and others target Mac Terminal ([Microsoft analysis](https://www.microsoft.com/en-us/security/blog/2025/08/21/think-before-you-clickfix-analyzing-the-clickfix-social-engineering-technique)).
 
-This project started in October 2026, after a fake "I'm not a robot" page tricked its author. Everything here is built from that experience: what would have stopped it, what showed it had happened, and what actually worked to recover.
+ClickFix First Aid answers this at the one point every ClickFix attack must pass through: the moment a web page writes a command to the clipboard. The [technical report](report/ClickFix-First-Aid-Technical-Report.md) ([PDF](report/ClickFix-First-Aid-Technical-Report.pdf)) describes the design and the privacy model, measures the extension against 25 attack commands from public threat reports, and compares it with other anti-ClickFix extensions.
 
 ## Install
 
@@ -95,7 +95,7 @@ The short version (the long, beginner-friendly version is in [LEARN.md](LEARN.md
 - **A trap that opens a new pop-up window** shows its warning in that window.
 - **Huge pages make a command copy slower.** The page is read only when the copied text looks like a command. Measured in headless Chromium: about 10 to 30 ms extra on a page with 1,000 paragraphs, about 0.2 seconds on one with 100,000.
 
-## Independent review
+## External review
 
 Version 0.1.0 was reviewed before release with Perplexity, which reported 11 bypasses, 7 false-positive problems, 4 UI issues, 7 PowerShell issues and 10 guide corrections, with harmless proof-of-concept pages. v0.2.0 fixes them. The proof-of-concept pages now run in the test suite on every change.
 
@@ -111,6 +111,7 @@ npm run test:ps      # PowerShell checker tests (needs pwsh)
 npm run test:e2e     # loads the extension into Chromium against fake trap pages (npx playwright install chromium first)
 npm run package      # builds release files and SHA256SUMS.txt into dist/
 npm run links        # checks the recovery guide's official help links
+npm run bench        # replays the benchmark corpus against the extension (see benchmark/README.md)
 ```
 
 Current results: 80 engine and contract tests, 116 PowerShell tests and 52 browser tests. The fake trap pages are stored encoded (`node scripts/fixtures.mjs`), because antivirus programs quarantine them as real attack pages. Releases follow [RELEASING.md](RELEASING.md). All "malicious" test samples use reserved, non-routable hosts (`example.invalid`, `*.example`, `203.0.113.0/24`) and the fake trap pages only copy a harmless `echo` command.

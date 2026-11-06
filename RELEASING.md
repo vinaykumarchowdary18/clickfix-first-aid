@@ -16,4 +16,4 @@
 - Check false alarms on real developer documentation, online code editors and very large pages.
 - Run `npm run links` and read any "unsure" result by hand. A 403 or 429 means the site refused an automated check, not that the page is gone.
 - Read every line of the recovery guide against the official help pages again. Menus move.
-- Ask for an independent review of the changes, and verify its findings before acting on them.
+- Ask for an external review of the changes, and verify its findings before acting on them.

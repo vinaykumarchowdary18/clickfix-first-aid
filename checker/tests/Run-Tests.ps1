@@ -49,7 +49,7 @@ $r = Invoke-CfaAnalysis -Detector $detector -Evidence $clean
 Assert-Equal 'clean' $r.Overall 'clean PC is reported clean'
 
 $hit = New-FakeEvidence
-$hit.RunMRU = @('notepad', $fixtures.block.'curl + silent msiexec (incident shape)')
+$hit.RunMRU = @('notepad', $fixtures.block.'curl + silent msiexec')
 $r = Invoke-CfaAnalysis -Detector $detector -Evidence $hit
 Assert-Equal 'danger' $r.Overall 'ClickFix command in Run history is danger'
 Assert-Equal 'Run box history (Win+R)' $r.Findings[0].Area 'finding names the Run box'

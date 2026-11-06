@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+Documentation only. The extension is unchanged.
+
+- **Technical report** (`report/`): design, privacy model, a measured evaluation and a comparison with other anti-ClickFix extensions, as Markdown and PDF.
+- **Benchmark** (`benchmark/`): 25 defanged attack commands from public threat reports and 24 ordinary commands, replayed against any Chromium extension in a real browser. None of the samples was used to write the rules.
+- README statistics now cite Microsoft's report directly, and the ReliaQuest figure is worded as ReliaQuest states it.
+
 ## v0.3.3 (28 October 2026)
 
 Microsoft Edge Add-ons review failed v0.3.2 with "detection of malware within the package", without naming a file or a reason. The extension contains no malware: Microsoft Defender found nothing in it, both in the scan of this repository on GitHub and on a Windows PC where the extension was unzipped and used. One part of it did use a technique that malware also uses, so it is gone.
@@ -25,7 +33,7 @@ Fixes found while testing v0.3.0 on a real Windows laptop and making the project
 
 ## v0.3.0 (25 October 2026)
 
-This release comes from a second round of independent review with Perplexity (an architecture and risk analysis, a QA plan with contract tests, and a security and integration review, all in [reviews/](reviews/)), plus problems found while checking that round. The round also delivered a complete rewrite of the extension. It was not adopted: run against this project's test samples, its engine missed 2 of the 26 attack shapes, blocked 10 of the 11 legitimate installer and one-liner samples (by design), and could be switched off by a page replacing `RegExp.prototype[Symbol.replace]`. Its good ideas were taken instead, and are credited below.
+This release comes from a second round of external review produced with AI models (Perplexity) (an architecture and risk analysis, a QA plan with contract tests, and a security and integration review, all in [reviews/](reviews/)), plus problems found while checking that round. The round also delivered a complete rewrite of the extension. It was not adopted: run against this project's test samples, its engine missed 2 of the 26 attack shapes, blocked 10 of the 11 legitimate installer and one-liner samples (by design), and could be switched off by a page replacing `RegExp.prototype[Symbol.replace]`. Its good ideas were taken instead, and are credited below.
 
 The fixes come with tests that fail on v0.2.0 and pass now. The one exception is the real-click check on the warning buttons, which no web page can reach to test, because the buttons sit in a closed shadow root.
 
@@ -66,7 +74,7 @@ The fixes come with tests that fail on v0.2.0 and pass now. The one exception is
 
 ## v0.2.0 (22 October 2026)
 
-This release answers an independent pre-release security review of v0.1.0, run with Perplexity. Every finding was first reproduced against v0.1.0 (the review's proof-of-concept pages are now part of the test suite, in `tests/fixtures/pages/review/`), then fixed with a test that failed before the fix. IDs refer to the review.
+This release answers an external pre-release security review of v0.1.0, produced with AI models (Perplexity). Every finding was first reproduced against v0.1.0 (the review's proof-of-concept pages are now part of the test suite, in `tests/fixtures/pages/review/`), then fixed with a test that failed before the fix. IDs refer to the review.
 
 ### Protection
 
