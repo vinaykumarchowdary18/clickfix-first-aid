@@ -1,0 +1,673 @@
+{
+ "meta": {
+  "label": "StopFix",
+  "extension": {
+   "name": "StopFix",
+   "version": "1.0",
+   "commit": "92e0da4"
+  },
+  "browser": "141.0.7390.37",
+  "date": "2026-11-06T08:19:43.910Z",
+  "waitMs": 5000
+ },
+ "summary": {
+  "attack-lure": {
+   "delivered": 25,
+   "prevented": 0,
+   "replaced": 0,
+   "total": 25
+  },
+  "attack-plain": {
+   "delivered": 25,
+   "prevented": 0,
+   "replaced": 0,
+   "total": 25
+  },
+  "method": {
+   "delivered": 4,
+   "prevented": 1,
+   "replaced": 0,
+   "total": 5
+  },
+  "benign": {
+   "delivered": 24,
+   "prevented": 0,
+   "replaced": 0,
+   "total": 24
+  }
+ },
+ "results": [
+  {
+   "group": "attack-lure",
+   "id": "H01",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-lure",
+   "id": "H02",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-lure",
+   "id": "H03",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-lure",
+   "id": "H04",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-lure",
+   "id": "H05",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-lure",
+   "id": "H06",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-lure",
+   "id": "H07",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-lure",
+   "id": "H08",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-lure",
+   "id": "H09",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-lure",
+   "id": "H10",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-lure",
+   "id": "H11",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-lure",
+   "id": "H12",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-lure",
+   "id": "H13",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-lure",
+   "id": "H14",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-lure",
+   "id": "H15",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-lure",
+   "id": "H16",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-lure",
+   "id": "H17",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-lure",
+   "id": "H18",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-lure",
+   "id": "H19",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-lure",
+   "id": "H20",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-lure",
+   "id": "H21",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-lure",
+   "id": "H22",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-lure",
+   "id": "H23",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-lure",
+   "id": "H24",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-lure",
+   "id": "H25",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-plain",
+   "id": "H01",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-plain",
+   "id": "H02",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-plain",
+   "id": "H03",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-plain",
+   "id": "H04",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-plain",
+   "id": "H05",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-plain",
+   "id": "H06",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-plain",
+   "id": "H07",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-plain",
+   "id": "H08",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-plain",
+   "id": "H09",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-plain",
+   "id": "H10",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-plain",
+   "id": "H11",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-plain",
+   "id": "H12",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-plain",
+   "id": "H13",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-plain",
+   "id": "H14",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-plain",
+   "id": "H15",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-plain",
+   "id": "H16",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-plain",
+   "id": "H17",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-plain",
+   "id": "H18",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-plain",
+   "id": "H19",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-plain",
+   "id": "H20",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-plain",
+   "id": "H21",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-plain",
+   "id": "H22",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-plain",
+   "id": "H23",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-plain",
+   "id": "H24",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "attack-plain",
+   "id": "H25",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "method",
+   "id": "H17-writeText",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "method",
+   "id": "H17-write",
+   "method": "write",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "method",
+   "id": "H17-execCommand",
+   "method": "execCommand",
+   "outcome": "prevented",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "method",
+   "id": "H17-setData",
+   "method": "setData",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "method",
+   "id": "H17-itemsAdd",
+   "method": "itemsAdd",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "benign",
+   "id": "B01",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "benign",
+   "id": "B02",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "benign",
+   "id": "B03",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "benign",
+   "id": "B04",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "benign",
+   "id": "B05",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "benign",
+   "id": "B06",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "benign",
+   "id": "B07",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "benign",
+   "id": "B08",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "benign",
+   "id": "B09",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "benign",
+   "id": "B10",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "benign",
+   "id": "B11",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "benign",
+   "id": "B12",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "benign",
+   "id": "B13",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "benign",
+   "id": "B14",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "benign",
+   "id": "B15",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "benign",
+   "id": "B16",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "benign",
+   "id": "B17",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "benign",
+   "id": "B18",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "benign",
+   "id": "B19",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "benign",
+   "id": "B20",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "benign",
+   "id": "B21",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "benign",
+   "id": "B22",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "benign",
+   "id": "B23",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  },
+  {
+   "group": "benign",
+   "id": "B24",
+   "method": "writeText",
+   "outcome": "delivered",
+   "dialog": false,
+   "navigatedAway": false
+  }
+ ]
+}

@@ -41,4 +41,4 @@ node benchmark/run.mjs --ext /path/to/unpacked-extension --label "Other" --out o
 
 Options: `--wait <ms>` (default 5000) and `--out <file>` for the full per-case results. A run takes about eight minutes.
 
-To test another extension, point `--ext` at its unpacked folder (the one with `manifest.json`). Build it first if its repository needs a build step. The results for the tools in the report, with the exact commits tested, are in [results/](results/).
+To test another extension, point `--ext` at its unpacked folder (the one with `manifest.json`). Build it first if its repository needs a build step. The results for the tools in the report, with the exact commits tested, are in [results/2026-11-06/](results/2026-11-06/).

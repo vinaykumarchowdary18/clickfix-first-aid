@@ -35,7 +35,7 @@ This report describes how the extension works and how it treats user data, and m
 | Network requests made by the extension | **None** |
 | Automated tests passing | **248** (80 engine, 116 PowerShell, 52 browser end-to-end) |
 
-{{COMPARISON_SUMMARY}}
+Five other anti-ClickFix extensions whose code is public were run through the same test (section 7). ClickFix First Aid was the only one to stop all 25 attacks on fake verification pages and the only one to stop the attack with all five clipboard write methods. The closest, ClickFix Guard by samdem-ai, stopped 24 of 25 on fake verification pages and matched ClickFix First Aid with 20 of 25 when the page gave no instructions, while copying every installer one-liner without a pause. Three of the five tools warn the user but leave the attack command on the clipboard. ClickFix Block by Eye Security, the most widely installed tool found, could not be tested because its code is not published.
 
 ## 2. The threat
 
@@ -73,7 +73,7 @@ Public reports from 2025 and 2026 describe a steady stream of new command shapes
 
 All four parts are released together under the MIT License, with SHA-256 checksums for every file.
 
-<p class="shots"><img src="../store/1-blocks-fake-captcha.png" alt="The block warning shown on a fake verification page" width="49%"> <img src="../store/2-pauses-install-commands.png" alt="The pause panel shown when a documentation page copies an installer" width="49%"></p>
+<p class="shots"><img src="assets/block-warning.png" alt="The block warning shown on a fake verification page" width="49%"> <img src="assets/pause-panel.png" alt="The pause panel shown when a documentation page copies an installer" width="49%"></p>
 
 *Figure 1. Left: a fake verification page put an attack command on the clipboard; the extension replaced it with a harmless message and explains what happened. Right: a documentation page's Copy button placed a download-and-run installer on the clipboard; one click on Copy anyway copies it as normal.*
 
@@ -218,7 +218,7 @@ Three unrelated projects use the name "ClickFix Guard"; they are told apart here
 | ClickFix Guard (samdem-ai) | Page hook; rules, a shell parser and an on-device logistic-regression classifier; replaces blocked commands with a note [19] | None, according to its README [19] | `storage`, `clipboardWrite`, `offscreen`; content scripts on all pages |
 | ClickFix Guard (frameman) | Wraps `writeText`, `write`, `execCommand` and `setData`; decodes layered encodings; also watches page network calls; full-screen warning for high risk [21] | None described | `clipboardWrite`, `storage`, all HTTP and HTTPS sites |
 | ClickFix Guard (samurayski) | Clipboard hooks plus scoring of page text; shows a warning banner; managed policies for organisations [22] | Optional webhook set by an administrator, which can include the user's email address [22] | `storage`, `identity`, `identity.email`, all websites |
-| StopFix | Flags PowerShell, mshta, msiexec, rundll32, regsvr32, bash and curl in clipboard writes; asks the user to ignore or clear [20] | None described | `scripting`, `activeTab`, `storage`, all websites |
+| StopFix | Flags PowerShell, mshta, msiexec, rundll32, regsvr32, bash and curl in clipboard writes; a dialog asks the user to ignore it or clear the clipboard [20] | None described | `scripting`, `activeTab`, `storage`, all websites |
 | BLANK | On-demand scan from the toolbar popup with rules and an on-device classifier; can audit and wipe the clipboard [23] | Optional cloud second opinion with the user's own Groq or Google Gemini key [23] | `activeTab`, `scripting`, `storage`, `offscreen`, `clipboardRead` |
 
 ### 7.2 Head-to-head results
@@ -229,11 +229,20 @@ Every tool whose code is published and that intercepts clipboard writes automati
 |---|---|---|---|---|---|
 | **ClickFix First Aid 0.3.3** | **25 of 25 (100%)** | **20 of 25 (80%)** | **5 of 5** | **18 of 24** | **0 of 6** |
 | ClickFix Guard 1.0.1 (samdem-ai) | 24 of 25 (96%) | 20 of 25 (80%) | 4 of 5 | 24 of 24 | 6 of 6 |
+| ClickFix Warden 0.1.1 (xVoidByte) | 23 of 25 (92%) | 8 of 25 (32%) | 4 of 5 | 24 of 24 | 6 of 6 |
 | ClickFix Guard 2.0.0 (frameman) | 0 of 25 (0%) | 0 of 25 (0%) | 0 of 5 | 24 of 24 | 6 of 6 |
+| ClickFix Guard 0.4.4 (samurayski) | 0 of 25 (0%) | 0 of 25 (0%) | 0 of 5 | 24 of 24 | 6 of 6 |
+| StopFix 1.0 (naxonez) | 0 of 25 (0%) | 0 of 25 (0%) | 1 of 5 | 24 of 24 | 6 of 6 |
 
 "Stopped" means the attack text did not reach the clipboard. For ClickFix First Aid it includes commands paused for confirmation (all of its stops on the fake verification page were blocks). "Ordinary commands copied unchanged" counts the 24 documentation commands that reached the clipboard exactly as copied; the last column shows how many of the 6 official installer one-liners among them did.
 
-{{HEAD_TO_HEAD_NOTES}}
+**What the numbers show**
+
+- **Fake verification pages.** ClickFix First Aid stopped all 25 attacks. ClickFix Guard (samdem-ai) stopped 24 and ClickFix Warden 23. The command that got past both of them, H08 (a `cmd` line that assembles `pushd` and `rundll32` from variables to load a file from a WebDAV share, published in July 2026), was stopped by ClickFix First Aid only because of the trap instructions on the page.
+- **No instructions on the page.** ClickFix First Aid and ClickFix Guard (samdem-ai) each stopped 20 of 25, in different ways: ClickFix Guard blocked all 20, while ClickFix First Aid blocked 12 and paused 8 for confirmation. They missed different commands. ClickFix First Aid missed H06, H08, H13, H18 and H19; ClickFix Guard missed H05, H07, H08, H18 and H19. H08, H18 and H19 got past every tool tested. ClickFix Warden stopped 8 of 25 in this scenario.
+- **Clipboard write methods.** Only ClickFix First Aid stopped the attack with all five methods. ClickFix Guard (samdem-ai) and ClickFix Warden both let it through when the page wrote it with `clipboardData.items.add` inside a copy event. StopFix stopped only the `document.execCommand('copy')` case.
+- **Ordinary commands.** No tool blocked an ordinary command. ClickFix First Aid is the only one that adds a step: it paused the six installer one-liners. The other tools copied them unchanged.
+- **Warn-only designs.** Three tools warn but leave the command on the clipboard, so a visitor who pastes anyway still runs it, and the harness counts the attack as delivered. ClickFix Guard (frameman) replaced the page with a full-screen "ClickFix scam blocked" warning in all 30 cases on the fake verification page, but showed nothing in the spot-checked case without instructions. ClickFix Guard (samurayski) showed a warning banner, and StopFix a dialog with **Ignore** and **Clear clipboard** buttons; both were confirmed by screenshots of two cases each.
 
 ### 7.3 Tools not tested
 
@@ -253,7 +262,7 @@ Every tool whose code is published and that intercepts clipboard writes automati
 **Known limitations of version 0.3.3**
 
 - **Browser-side protection is a contest.** A determined page may find new ways to reach the clipboard or to word its instructions. That is why the project also ships the Win+R switch and the PC check.
-- **Detection is pattern-based.** In this evaluation, five commands copied without trap instructions got through: H06 (curl download, tar extract, run (three lines)); H08 (cmd assembling pushd and rundll32 from variables); H13 (JackFix: XOR-decoded PowerShell); H18 (DNS variant: nslookup answer run by cmd); H19 (DNS variant: nslookup beacon with user name). On a page with ClickFix instructions all five were blocked.
+- **Detection is pattern-based.** In this evaluation, five commands copied without trap instructions got through: H06 (curl download, tar extract and run, on three lines); H08 (cmd assembling pushd and rundll32 from variables); H13 (JackFix: XOR-decoded PowerShell); H18 (DNS variant: nslookup answer run by cmd); H19 (DNS variant: nslookup beacon with user name). On a page with ClickFix instructions all five were blocked.
 - **Typed commands are not seen.** A page that shows a command as an image and asks the visitor to type it is caught only by the instruction banner, and only if its wording is recognised.
 - **Installers are paused.** Copy buttons for genuine download-and-run installers need one extra click. This is deliberate and can be switched off per site with **Always allow**.
 - **The PC check is Windows-only.**
@@ -297,7 +306,7 @@ Kinds: **V** command shape as published, with indicators replaced by reserved na
 | H03 | forfiles building "powershell" from variables | Windows | V | [6] | Blocked | Blocked |
 | H04 | finger response run by cmd (caret-split) | Windows | V | [6] | Blocked | Blocked |
 | H05 | headless conhost, WebDAV share, rundll32 by ordinal | Windows | V | [6] | Blocked | Blocked |
-| H06 | curl download, tar extract, run (three lines) | Windows | V | [6] | Blocked | Delivered |
+| H06 | curl download, tar extract and run, on three lines | Windows | V | [6] | Blocked | Delivered |
 | H07 | pcalua, PowerShell, caret-split pushd and rundll32 | Windows | V | [7] | Blocked | Blocked |
 | H08 | cmd assembling pushd and rundll32 from variables | Windows | V | [7] | Blocked | Delivered |
 | H09 | headless conhost, curl download, run | Windows | V+ | [8] | Blocked | Blocked |
@@ -331,21 +340,21 @@ Kinds: **V** command shape as published, with indicators replaced by reserved na
 | B07 | `oh-my-posh init pwsh \| Invoke-Expression` | Plain | [docs](https://ohmyposh.dev/docs/installation/prompt) | Copied |
 | B08 | `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser` | Plain | [docs](https://scoop.sh/) | Copied |
 | B09 | `winget install --id Git.Git -e --source winget` | Plain | [docs](https://git-scm.com/download/win) | Copied |
-| B10 | `npm install -g pnpm` | Plain | common usage | Copied |
-| B11 | `python -m pip install --upgrade pip` | Plain | common usage | Copied |
-| B12 | `docker compose up -d` | Plain | common usage | Copied |
-| B13 | `git clone https://github.com/microsoft/vscode.git` | Plain | common usage | Copied |
-| B14 | `wsl --install -d Ubuntu` | Plain | common usage | Copied |
-| B15 | `choco install googlechrome -y` | Plain | common usage | Copied |
-| B16 | `brew install --cask visual-studio-code` | Plain | common usage | Copied |
-| B17 | `sudo apt update && sudo apt install -y nodejs` | Plain | common usage | Copied |
+| B10 | `npm install -g pnpm` | Plain | general use | Copied |
+| B11 | `python -m pip install --upgrade pip` | Plain | general use | Copied |
+| B12 | `docker compose up -d` | Plain | general use | Copied |
+| B13 | `git clone https://github.com/microsoft/vscode.git` | Plain | general use | Copied |
+| B14 | `wsl --install -d Ubuntu` | Plain | general use | Copied |
+| B15 | `choco install googlechrome -y` | Plain | general use | Copied |
+| B16 | `brew install --cask visual-studio-code` | Plain | general use | Copied |
+| B17 | `sudo apt update && sudo apt install -y nodejs` | Plain | general use | Copied |
 | B18 | `ssh-keygen -t ed25519 -C "your_email@example.com"` | Plain | [docs](https://docs.github.com/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent) | Copied |
-| B19 | `npx create-next-app@latest` | Plain | common usage | Copied |
-| B20 | `Get-FileHash .\setup.exe -Algorithm SHA256` | Plain | common usage | Copied |
-| B21 | `kubectl get pods -A` | Plain | common usage | Copied |
-| B22 | `print("Hello, world!")` | Plain | common usage | Copied |
-| B23 | `482913` | Plain | common usage | Copied |
-| B24 | `Verification ID: 7731-AX (quote this when you contact support)` | Plain | common usage | Copied |
+| B19 | `npx create-next-app@latest` | Plain | general use | Copied |
+| B20 | `Get-FileHash .\setup.exe -Algorithm SHA256` | Plain | general use | Copied |
+| B21 | `kubectl get pods -A` | Plain | general use | Copied |
+| B22 | `print("Hello, world!")` | Plain | general use | Copied |
+| B23 | `482913` | Plain | general use | Copied |
+| B24 | `Verification ID: 7731-AX (quote this when you contact support)` | Plain | general use | Copied |
 
 ## Appendix C. Reproducing the measurement
 
@@ -359,12 +368,16 @@ node benchmark/run.mjs --ext extension --label "ClickFix First Aid" --out cfa.js
 node benchmark/run.mjs --ext /path/to/other-extension --label "Other tool" --out other.json
 ```
 
-Each run takes about eight minutes. Tested versions of the other tools:
+Each run takes about eight minutes. Versions tested:
 
 | Tool | Repository | Commit tested | Notes |
 |---|---|---|---|
+| ClickFix First Aid 0.3.3 | this repository | `1189278` | Loaded unpacked from `extension/`, identical to the 0.3.3 release. |
+| ClickFix Warden 0.1.1 | [github.com/xVoidByte/ClickFixWarden](https://github.com/xVoidByte/ClickFixWarden) | `3d5ddcb` | Built with `wxt build` from the repository; no internet access during the test, so its downloadable feeds were not loaded. |
 | ClickFix Guard (samdem-ai) 1.0.1 | [github.com/samdem-ai/clickfix-guard-extention](https://github.com/samdem-ai/clickfix-guard-extention) | `8f97295` | Loaded unpacked from the repository root. |
 | ClickFix Guard (frameman) 2.0.0 | [github.com/frameman/dec-clickfix-web-extension](https://github.com/frameman/dec-clickfix-web-extension) | `d74582a` | Loaded unpacked from `clickfix_extension/`. |
+| ClickFix Guard (samurayski) 0.4.4 | [github.com/samurayski/clickfix-guard](https://github.com/samurayski/clickfix-guard) | `6ca710a` | Loaded unpacked from the repository root, default policy. |
+| StopFix 1.0 | [github.com/naxonez/StopFix](https://github.com/naxonez/StopFix) | `92e0da4` | Loaded unpacked from the repository root. |
 
 ## References
 
@@ -388,6 +401,6 @@ Each run takes about eight minutes. Tested versions of the other tools:
 18. xVoidByte. *ClickFix Warden*. [GitHub](https://github.com/xVoidByte/ClickFixWarden)
 19. samdem-ai. *ClickFix Guard*. [GitHub](https://github.com/samdem-ai/clickfix-guard-extention)
 20. naxonez. *StopFix*. [GitHub](https://github.com/naxonez/StopFix)
-21. frameman. *det-clickfix-web-extension* ("ClickFix Guard"). [GitHub](https://github.com/frameman/dec-clickfix-web-extension)
+21. frameman. *dec-clickfix-web-extension* ("ClickFix Guard"). [GitHub](https://github.com/frameman/dec-clickfix-web-extension)
 22. samurayski. *clickfix-guard* ("ClickFix Guard"). [GitHub](https://github.com/samurayski/clickfix-guard)
 23. athx1337. *BLANK*. [GitHub](https://github.com/athx1337/blank-clickfix-detector)

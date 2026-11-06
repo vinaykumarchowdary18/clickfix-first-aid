@@ -58,14 +58,14 @@ DIAGRAM = f'''
 '''
 
 body_html = subprocess.run(
-    ['pandoc', '-f', 'gfm', '-t', 'html5', '--no-highlight'],
+    ['pandoc', '-f', 'gfm', '-t', 'html5', '--no-highlight', '--wrap=none'],
     input=body, capture_output=True, text=True, check=True,
 ).stdout
 body_html = re.sub(r'<pre class="mermaid"><code>.*?</code></pre>', DIAGRAM, body_html, flags=re.S)
 body_html = re.sub(r'<pre lang="mermaid"><code>.*?</code></pre>', DIAGRAM, body_html, flags=re.S)
 
 # Contents from the numbered and appendix headings.
-contents = re.findall(r'<h2 id="([^"]+)">(.*?)</h2>', body_html)
+contents = re.findall(r'<h2[^>]*\bid="([^"]+)"[^>]*>(.*?)</h2>', body_html, flags=re.S)
 toc = '\n'.join(f'<li><a href="#{i}">{t}</a></li>' for i, t in contents)
 
 fonts = HERE / 'fonts'
@@ -156,7 +156,7 @@ doc = f'''<!doctype html><html lang="en"><head><meta charset="utf-8"><title>{htm
 TMP_HTML.write_text(doc, encoding='utf-8')
 
 footer = (
-    '<div style="width:100%;font-family:sans-serif;font-size:7.5pt;color:#6b7785;padding:0 17mm;display:flex;justify-content:space-between;">'
+    '<div style="width:100%;font-family:Liberation Sans,Arial,sans-serif;font-size:7.5pt;color:#6b7785;padding:0 17mm;display:flex;justify-content:space-between;">'
     f'<span>{html.escape(title)} &middot; {html.escape(meta_map.get("Document", ""))} &middot; Version {html.escape(meta_map.get("Version", ""))}</span>'
     '<span>Page <span class="pageNumber"></span> of <span class="totalPages"></span></span></div>'
 )

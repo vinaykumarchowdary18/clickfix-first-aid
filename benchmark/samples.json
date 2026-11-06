@@ -82,7 +82,7 @@
   },
   {
    "id": "H06",
-   "name": "curl download, tar extract, run (three lines)",
+   "name": "curl download, tar extract and run, on three lines",
    "os": "win",
    "kind": "V",
    "source": "bt",
