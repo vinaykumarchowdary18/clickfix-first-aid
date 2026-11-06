@@ -4,7 +4,7 @@ A repeatable measurement of how well a browser extension stops ClickFix attacks,
 
 ## What it does
 
-`run.mjs` loads one extension (or none) into Chromium, opens generated test pages, clicks, waits 5 seconds and reads the clipboard:
+`run.mjs` loads one extension (or none) into Chromium, opens generated test pages, waits 1 second (as a person reading the page would), clicks, waits 5 seconds and reads the clipboard:
 
 | Group | Page | Cases |
 |---|---|---|
@@ -44,6 +44,7 @@ Options:
 | Option | Meaning |
 |---|---|
 | `--out <file>` | Write the full per-case results as JSON. |
+| `--think <ms>` | How long to wait between the page loading and the click (default 1000). Some extensions need a moment after a page loads before they start checking. |
 | `--wait <ms>` | How long to wait after each click (default 5000). |
 | `--only <group/id,...>` | Run only these cases, for example `attack-lure/H17,benign/B01`. |
 | `--shots <dir>` | Save a screenshot of the page after the click for the cases in `--shot-cases` (default `attack-lure/H17,attack-plain/H17`). |

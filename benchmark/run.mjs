@@ -6,6 +6,8 @@
 //
 // Options: --out results.json   full per-case results
 //          --wait 5000          ms to wait after each click
+//          --think 1000         ms between the page loading and the click, as a person
+//                               needs time to read the page before clicking
 //          --only g/id,g/id     run only these cases (e.g. attack-lure/H17)
 //          --shots dir          save screenshots of the page after the click for
 //                               --shot-cases (default attack-lure/H17,attack-plain/H17)
@@ -41,6 +43,7 @@ const label = opt('--label', 'unnamed');
 const extDir = args.includes('--none') ? null : resolve(opt('--ext', join(HERE, '..', 'extension')));
 const outFile = opt('--out', null);
 const WAIT = Number(opt('--wait', '5000'));
+const THINK = Number(opt('--think', '1000'));
 const ONLY = opt('--only', null);
 const SHOTS = opt('--shots', null);
 const SHOT_CASES = (opt('--shot-cases', 'attack-lure/H17,attack-plain/H17')).split(',');
@@ -158,6 +161,7 @@ for (const c of cases) {
   try {
     await page.goto(`http://${c.host}:${port}${c.path}`, { waitUntil: 'load' });
     await page.bringToFront();
+    await new Promise((r) => setTimeout(r, THINK));
     await page.click(c.click, { timeout: 5000 });
   } catch (e) { error = String(e.message || e).split('\n')[0]; }
   await new Promise((r) => setTimeout(r, WAIT));
@@ -194,6 +198,7 @@ if (extDir) {
 meta.browser = context.browser()?.version() || null;
 meta.date = new Date().toISOString();
 meta.waitMs = WAIT;
+meta.thinkMs = THINK;
 
 await context.close();
 server.close();
