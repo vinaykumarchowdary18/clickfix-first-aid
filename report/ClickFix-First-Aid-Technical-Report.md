@@ -16,7 +16,7 @@
 
 ## 1. Executive summary
 
-ClickFix is a social engineering technique in which a web page shows a fake security check, silently puts a command on the visitor's clipboard, and tells the visitor to paste it into the Windows Run box, a terminal or File Explorer. The visitor then runs the attacker's command themselves. Microsoft's Digital Defense Report 2025 names ClickFix the most common initial access method seen by its Defender Experts team over the year, at 47% of attacks [1].
+ClickFix is a social engineering technique in which a web page shows a fake security check, silently puts a command on the visitor's clipboard, and tells the visitor to paste it into the Windows Run box, a terminal or File Explorer. The visitor then runs the attacker's command themselves. Microsoft's Digital Defense Report 2025 names ClickFix the most common initial access method that its Defender Experts observed in the last year, at 47% of attacks; the report covers Microsoft's fiscal year 2025 (July 2024 to June 2025) [1].
 
 ClickFix First Aid is a free, open-source browser extension for Chromium-based browsers that stops the attack at the moment a page writes to the clipboard, before anything reaches the operating system. It is published on Microsoft Edge Add-ons [2] and also works in Google Chrome. A companion PowerShell script checks a Windows PC for signs of an earlier attack, and a built-in recovery guide walks people through what to do if they already ran a command.
 
@@ -29,13 +29,13 @@ This report describes how the extension works and how it treats user data, and m
 | Attacks stopped on fake verification pages | **25 of 25 (100%)** |
 | Attacks stopped when the page gives no instructions (command alone) | **20 of 25 (80%): 12 blocked, 8 paused for confirmation** |
 | Clipboard write methods covered | **5 of 5** |
-| Ordinary commands copied unchanged (no false alarm) | **18 of 18 (100%)** |
+| Plain commands copied unchanged (no false alarm) | **18 of 18 (100%)** |
 | Download-and-run installers paused for one-click confirmation | **6 of 6** |
 | Permissions requested | **1** (`storage`), plus content scripts on all pages |
 | Network requests made by the extension | **None** |
 | Automated tests passing | **248** (80 engine, 116 PowerShell, 52 browser end-to-end) |
 
-Five other anti-ClickFix extensions whose code is public were run through the same test (section 7). ClickFix First Aid was the only one to stop all 25 attacks on fake verification pages and the only one to stop the attack with all five clipboard write methods. The closest, ClickFix Guard by samdem-ai, stopped 24 of 25 on fake verification pages and matched ClickFix First Aid with 20 of 25 when the page gave no instructions, while copying every installer one-liner without a pause. Three of the five tools warn the user but leave the attack command on the clipboard. ClickFix Block by Eye Security, the most widely installed tool found, could not be tested because its code is not published.
+Six other anti-ClickFix extensions whose code is public were run through the same test with their default settings (section 7). ClickFix First Aid was the only one to stop all 25 attacks on fake verification pages and the only one to stop the attack with all five clipboard write methods. When the page gave no instructions, ClickFix Mitigator stopped the most (22 of 25), ahead of ClickFix Guard by samdem-ai (21) and ClickFix First Aid (20); ClickFix Mitigator also blocked 7 of the 24 ordinary commands, including all six installer one-liners, while ClickFix First Aid paused those six for one-click confirmation and copied every plain command unchanged. Three of the six tools warn the user but leave the attack command on the clipboard. ClickFix Block by Eye Security, the most widely installed tool found, could not be tested because its code is not published and its store package could not be downloaded.
 
 ## 2. The threat
 
@@ -53,14 +53,14 @@ Because the victim starts the program, the attack passes through email filters a
 
 | Finding | Source |
 |---|---|
-| ClickFix was the most common initial access method seen in Microsoft Defender Experts notifications, accounting for 47% of attacks (Microsoft fiscal year 2025, July 2024 to June 2025). | Microsoft Digital Defense Report 2025 [1] |
+| ClickFix was the most common initial access method that Microsoft Defender Experts observed in Defender Experts notifications in the last year, accounting for 47% of attacks. The report covers fiscal year 2025 (July 2024 to June 2025). | Microsoft Digital Defense Report 2025 [1] |
 | ClickFix detections grew by more than 500% from the second half of 2024 to the first half of 2025, making it the second most common attack vector after phishing, with nearly 8% of all blocked attacks. | ESET Threat Report H1 2025 [3] |
 | From March to May 2026, ClickFix led initial access in ReliaQuest's incident data (as Spearphishing Link, 14.9%), and the two obfuscation techniques that fingerprint it made up nearly 28% of defense-evasion activity. | ReliaQuest [4] |
-| An analysis of about 3,000 live ClickFix payloads found PowerShell and `cmd` each in about 39% of process chains and `msiexec` in about 34%, with the lure moving from Windows + R to Windows + X and Windows Terminal. | Bert-Jan Pals, reported by The Hacker News [5] |
+| An analysis of about 3,000 live ClickFix payloads found PowerShell and `cmd` tied as the most common launchers at about 39% each, with `msiexec` close behind at 34%, with the lure moving from Windows + R to Windows + X and Windows Terminal. | Bert-Jan Pals, reported by The Hacker News [5] |
 
 ### 2.3 How the technique keeps changing
 
-Public reports from 2025 and 2026 describe a steady stream of new command shapes: commands launched through `pcalua`, `forfiles` and headless `conhost`; payloads fetched with `finger` or hidden in DNS answers retrieved with `nslookup`; `rundll32` loading a file by ordinal from a WebDAV share; keywords split into variables or broken up with `^` characters; commands padded with spaces so that only a harmless-looking file path is visible; and Base64-encoded one-liners for macOS Terminal [6][7][8][9]. A defence that looks for a fixed list of words falls behind quickly, which is why this project combines command analysis with the context of the page (section 4).
+Public reports from 2025 and 2026 describe a steady stream of new command shapes: commands launched through `pcalua`, `forfiles` and headless `conhost`; payloads fetched with `finger` or hidden in DNS answers retrieved with `nslookup`; `rundll32` loading a file by ordinal from a WebDAV share; keywords split into variables or broken up with `^` characters; commands padded with spaces so that only a harmless-looking label is visible; and Base64-encoded one-liners for macOS Terminal [6][7][8][9]. A defence that looks for a fixed list of words falls behind quickly, which is why this project combines command analysis with the context of the page (section 4).
 
 ## 3. Product overview
 
@@ -121,7 +121,7 @@ The guard reports to the isolated content script through a node inside a closed 
 | Permissions | `storage` only. Content scripts run on all pages because ClickFix pages can be any website, including compromised legitimate ones. |
 | Network access | None. The extension makes no network requests, and its own pages forbid network connections through their Content Security Policy (`connect-src 'none'`). |
 | Remote code | None. All code ships in the package. |
-| Data kept | Counters, the last 20 warnings (kind, site name, a short preview of the blocked text with links broken), the user's settings and the sites the user allowed. All of it stays in the browser's local extension storage. **Clear history** deletes the history and counters; removing the extension deletes everything. |
+| Data kept | Counters, the last 20 warnings (kind, site name, a short preview of the blocked or paused text with links broken), the user's settings and the sites the user allowed, in the browser's local extension storage. **Clear history** deletes the history and counters; removing the extension deletes everything. For each open tab, whether it showed trap instructions and, for a paused copy, the reason and a short preview (up to 600 characters, links broken), kept in memory only (`chrome.storage.session`) and cleared when the tab closes or reloads and when the browser closes. |
 | Data sent anywhere | Nothing. There is no server, no account, no analytics and no telemetry. |
 | Page text | Read locally to recognise trap instructions. It is never stored or sent. |
 
@@ -131,7 +131,7 @@ The full privacy statement is in `PRIVACY.md` in the repository, and the Microso
 
 ### 6.1 Method
 
-**Attack corpus.** 25 attack commands, each taken from a public threat report or technical write-up published in 2025 or 2026 (Appendix A). Every command was defanged: host names were replaced with reserved names (`example.invalid`) or documentation addresses (`203.0.113.0/24`), and encoded payloads decode to harmless text. Where a report published the full command, its shape was kept as published (16 samples, marked V). Where the report truncated the command, the tail was completed (4 samples, V+). Where a report described a command without printing it, the command was reconstructed from the description (5 samples, R). The corpus covers Windows (21 samples) and macOS (4 samples).
+**Attack corpus.** 25 attack commands, each taken from a public threat report or technical write-up published in 2025 or 2026 (Appendix A). Every command was defanged: host names were replaced with reserved names (`example.invalid`) or documentation addresses (`203.0.113.0/24`), and encoded payloads decode to harmless text or to commands that point only at reserved addresses. Where a report published the full command, its shape was kept as published (20 samples, marked V). Where the report truncated the command, the tail was completed (1 sample, V+). Where a report described a command without printing it, the command was reconstructed from the description (4 samples, R). The corpus covers Windows (21 samples) and macOS (4 samples).
 
 **Held out.** None of these 25 commands was in the project's test suite when they were measured, and the detection rules were not changed after seeing the results. The results below are therefore what version 0.3.3, as published, does with commands it was not tuned on.
 
@@ -146,9 +146,9 @@ The full privacy statement is in `PRIVACY.md` in the repository, and the Microso
 | Clipboard write methods | Fake verification page, one encoded PowerShell command (H17) | All five methods | 5 |
 | Ordinary copy button | Documentation-style page with a Copy button | `navigator.clipboard.writeText` | 24 |
 
-**Measurement.** Each extension was loaded on its own into Chromium 141.0.7390.37 (Playwright, new headless mode). For each case the harness put a marker on the clipboard, opened the page, clicked, waited 5 seconds, and read the clipboard. The outcome is *delivered* if the clipboard holds exactly the text the page tried to copy, and *stopped* otherwise (the copy was prevented, or the clipboard holds a warning instead). For an attack, delivered means the attack got through. For an ordinary command, anything other than delivered is a false alarm or added friction. Pages were served from the local machine under made-up host names, so extensions treated them as ordinary websites, and no traffic left the machine. A control run with no extension loaded confirmed that all 79 cases reach the clipboard when nothing intervenes.
+**Measurement.** Each extension was loaded on its own into Chromium 141.0.7390.37 (Playwright, new headless mode). For each case the harness put a marker on the clipboard, opened the page, waited 1 second (as a person reading the page would), clicked, waited 5 seconds, and read the clipboard. The outcome is *delivered* if the clipboard holds exactly the text the page tried to copy, and *stopped* otherwise (the copy was prevented, or the clipboard holds a warning instead). For an attack, delivered means the attack got through. For an ordinary command, anything other than delivered is a false alarm or added friction. Pages were served from the local machine under made-up host names, so extensions treated them as ordinary websites, and no traffic left the machine. A control run with no extension loaded confirmed that all 79 cases reach the clipboard when nothing intervenes.
 
-The harness and the encoded corpus are in the repository (`benchmark/`), so the measurement can be repeated (Appendix C).
+The harness and the encoded corpus are in the repository (`benchmark/`), so the measurement can be repeated (Appendix C). The full per-case results and screenshots of every tool on the same cases are in `benchmark/results/2026-11-06/`.
 
 ### 6.2 Results for ClickFix First Aid 0.3.3
 
@@ -175,9 +175,9 @@ Per-sample results are in Appendix A.
 
 | Suite | Tests | What it covers |
 |---|---|---|
-| Engine and contract tests (`npm test`) | 80 | 26 attack shapes blocked, 21 ordinary texts allowed, 11 installers held, page detection in several phrasings and languages, frames, tampering, long-text padding, pattern speed, and 7 contract cases from an external QA plan. |
+| Engine and contract tests (`npm test`) | 80 | 26 attack shapes blocked, 21 ordinary texts allowed, 11 installers held, page detection in several phrasings and languages, frames, tampering, long-text padding, pattern speed, and 7 contract cases from an external QA plan produced with AI models (Perplexity; see section 9). |
 | PowerShell checker tests (`npm run test:ps`) | 116 | The PowerShell checker reaches the same verdict as the JavaScript engine on all 58 shared samples; whole-PC analysis with fake evidence; the Win+R switch; every script parses and is pure ASCII. |
-| Browser end-to-end tests (`npm run test:e2e`) | 52 | The real extension in Chromium: all five copy methods, frames, late or hidden instructions, Copy anyway, Always allow, hand copies, a page hijacking a hand copy, the background worker being stopped mid-attack, the popup, the no-network rule, and 24 proof-of-concept bypass pages from an external security review. |
+| Browser end-to-end tests (`npm run test:e2e`) | 52 | The real extension in Chromium: all five copy methods, frames, late or hidden instructions, Copy anyway, Always allow, hand copies, a page hijacking a hand copy, the background worker being stopped mid-attack, the popup, the no-network rule, and 24 proof-of-concept bypass pages from the same AI-produced external security review. |
 
 Continuous integration runs on every change: the engine, PowerShell and browser suites on Linux with Node.js 22 and 24, the checker on Windows PowerShell 5.1, a dependency audit, a check that generated files are current, and a Microsoft Defender scan of the repository. All jobs passed on the latest commit of the main branch.
 
@@ -196,8 +196,8 @@ These are the browser extensions built specifically against ClickFix that web se
 | Tool | Maker | Where available | Source and license |
 |---|---|---|---|
 | **ClickFix First Aid** | Vinay Kumar Mandadi | Microsoft Edge Add-ons [2]; Chrome and other Chromium browsers from the release package | Open source, MIT |
-| ClickFix Block | Eye Security (Netherlands) | Chrome Web Store; about 60,000 users according to a third-party tracker [14] | Source not published [13] |
-| ClickFix Mitigator | j0rd1s3rr4n0 | Firefox Add-ons (1 user) [16]; Chrome Web Store (33 users according to a third-party tracker) [17] | MIT on Firefox Add-ons; no source link on the listing |
+| ClickFix Block | Eye Security | Chrome Web Store; about 60,000 users according to a third-party tracker [14] | Source not published [13] |
+| ClickFix Mitigator | j0rd1s3rr4n0 (Jordi Serrano) | Firefox Add-ons (1 user) [16]; Chrome Web Store (24 users according to a third-party tracker) [17]; GitHub [24] | Open source, MIT [24] |
 | ClickFix Warden | xVoidByte | GitHub only, no store listing yet [18] | Open source, MIT |
 | ClickFix Guard | samdem-ai | GitHub, with a signed Firefox package [19] | Open source, MIT |
 | ClickFix Guard | frameman | GitHub only [21] | Code public; no license stated |
@@ -213,13 +213,13 @@ Three unrelated projects use the name "ClickFix Guard"; they are told apart here
 |---|---|---|---|
 | **ClickFix First Aid** | Wraps all five clipboard write methods before page scripts run; command rules plus a scan for trap instructions in every frame; block, pause or allow; recovery guide and Windows PC check | None | `storage`; content scripts on all pages |
 | ClickFix Block | According to the vendor's technical write-up: wraps `document.execCommand` for copy and cut, matches keywords such as cmd, msiexec, powershell, iex, mshta, "not a robot" and captcha, and stops the copy with an alert; optional mode that blocks all scripted copies [13] | None described | `activeTab`, `storage` according to a third-party tracker [15]; content scripts on web pages |
-| ClickFix Mitigator | Analyses page instructions and clipboard content; can block pages or scripts; optional web platform for reviewing alerts [16] | Listing declares collection of website activity and website content [16] | Clipboard read and write, downloads, extension management, notifications, tabs, all websites [16] |
+| ClickFix Mitigator | A page script scores commands written to the clipboard and blocks risky ones; a setting to block every copy made by a page script, on by default; analyses page instructions; can block pages; part of a larger platform with an analyst dashboard [24] | By default sends a report of each alert (page address, detected text and page context) to the developer's server, and downloads block lists, allow lists and scoring settings from it; screenshots only if the user opts in [24]. The Firefox listing declares collection of website activity and website content [16] | `storage`, `tabs`, `notifications`, `clipboardRead`, `clipboardWrite`, `alarms`, `management`, `downloads`, `declarativeNetRequest`, `contextMenus`, all websites and local files [24] |
 | ClickFix Warden | Wraps clipboard writes, including copies through a fresh iframe; scoring engine with de-obfuscation; checks sites and downloads against reputation feeds built from abuse.ch data [18] | Downloads signed rule and reputation feeds every hour from GitHub Pages [18] | `storage`, `unlimitedStorage`, `alarms`, `webNavigation`, `webRequest`, `clipboardWrite`, all websites; optional `history`, `management` |
 | ClickFix Guard (samdem-ai) | Page hook; rules, a shell parser and an on-device logistic-regression classifier; replaces blocked commands with a note [19] | None, according to its README [19] | `storage`, `clipboardWrite`, `offscreen`; content scripts on all pages |
 | ClickFix Guard (frameman) | Wraps `writeText`, `write`, `execCommand` and `setData`; decodes layered encodings; also watches page network calls; full-screen warning for high risk [21] | None described | `clipboardWrite`, `storage`, all HTTP and HTTPS sites |
 | ClickFix Guard (samurayski) | Clipboard hooks plus scoring of page text; shows a warning banner; managed policies for organisations [22] | Optional webhook set by an administrator, which can include the user's email address [22] | `storage`, `identity`, `identity.email`, all websites |
-| StopFix | Flags PowerShell, mshta, msiexec, rundll32, regsvr32, bash and curl in clipboard writes; a dialog asks the user to ignore it or clear the clipboard [20] | None described | `scripting`, `activeTab`, `storage`, all websites |
-| BLANK | On-demand scan from the toolbar popup with rules and an on-device classifier; can audit and wipe the clipboard [23] | Optional cloud second opinion with the user's own Groq or Google Gemini key [23] | `activeTab`, `scripting`, `storage`, `offscreen`, `clipboardRead` |
+| StopFix | Flags PowerShell, mshta, msiexec, rundll32, regsvr32, bash and curl in clipboard writes; a dialog in Spanish asks the user to ignore it (**Ignorar**) or clear the clipboard (**Limpiar clipboard**) [20] | None described | `scripting`, `activeTab`, `storage`, all websites |
+| BLANK | Scans a page on demand from the toolbar popup, or after page load on sites the user enables, with rules and an on-device classifier; can audit and wipe the clipboard; does not intercept clipboard writes [23] | Optional cloud second opinion with the user's own Groq or Google Gemini key [23] | `activeTab`, `scripting`, `storage`, `offscreen`, `clipboardRead` |
 
 ### 7.2 Head-to-head results
 
@@ -228,8 +228,10 @@ Every tool whose code is published and that intercepts clipboard writes automati
 | Tool | Attacks stopped, fake verification page | Attacks stopped, no instructions | Copy methods covered | Ordinary commands copied unchanged | of which installers |
 |---|---|---|---|---|---|
 | **ClickFix First Aid 0.3.3** | **25 of 25 (100%)** | **20 of 25 (80%)** | **5 of 5** | **18 of 24** | **0 of 6** |
-| ClickFix Guard 1.0.1 (samdem-ai) | 24 of 25 (96%) | 20 of 25 (80%) | 4 of 5 | 24 of 24 | 6 of 6 |
+| ClickFix Guard 1.0.1 (samdem-ai) | 24 of 25 (96%) | 21 of 25 (84%) | 4 of 5 | 24 of 24 | 6 of 6 |
 | ClickFix Warden 0.1.1 (xVoidByte) | 23 of 25 (92%) | 8 of 25 (32%) | 4 of 5 | 24 of 24 | 6 of 6 |
+| ClickFix Mitigator 0.4.10 (j0rd1s3rr4n0) | 22 of 25 (88%) | 22 of 25 (88%) | 3 of 5 | 17 of 24 | 0 of 6 |
+| ClickFix Mitigator 0.4.10, "Block all JavaScript clipboard copying" switched off | 0 of 25 (0%) | 0 of 25 (0%) | 1 of 5 | 24 of 24 | 6 of 6 |
 | ClickFix Guard 2.0.0 (frameman) | 0 of 25 (0%) | 0 of 25 (0%) | 0 of 5 | 24 of 24 | 6 of 6 |
 | ClickFix Guard 0.4.4 (samurayski) | 0 of 25 (0%) | 0 of 25 (0%) | 0 of 5 | 24 of 24 | 6 of 6 |
 | StopFix 1.0 (naxonez) | 0 of 25 (0%) | 0 of 25 (0%) | 1 of 5 | 24 of 24 | 6 of 6 |
@@ -238,23 +240,26 @@ Every tool whose code is published and that intercepts clipboard writes automati
 
 **What the numbers show**
 
-- **Fake verification pages.** ClickFix First Aid stopped all 25 attacks. ClickFix Guard (samdem-ai) stopped 24 and ClickFix Warden 23. The command that got past both of them, H08 (a `cmd` line that assembles `pushd` and `rundll32` from variables to load a file from a WebDAV share, published in July 2026), was stopped by ClickFix First Aid only because of the trap instructions on the page.
-- **No instructions on the page.** ClickFix First Aid and ClickFix Guard (samdem-ai) each stopped 20 of 25, in different ways: ClickFix Guard blocked all 20, while ClickFix First Aid blocked 12 and paused 8 for confirmation. They missed different commands. ClickFix First Aid missed H06, H08, H13, H18 and H19; ClickFix Guard missed H05, H07, H08, H18 and H19. H08, H18 and H19 got past every tool tested. ClickFix Warden stopped 8 of 25 in this scenario.
-- **Clipboard write methods.** Only ClickFix First Aid stopped the attack with all five methods. ClickFix Guard (samdem-ai) and ClickFix Warden both let it through when the page wrote it with `clipboardData.items.add` inside a copy event. StopFix stopped only the `document.execCommand('copy')` case.
-- **Ordinary commands.** No tool blocked an ordinary command. ClickFix First Aid is the only one that adds a step: it paused the six installer one-liners. The other tools copied them unchanged.
-- **Warn-only designs.** Three tools warn but leave the command on the clipboard, so a visitor who pastes anyway still runs it, and the harness counts the attack as delivered. ClickFix Guard (frameman) replaced the page with a full-screen "ClickFix scam blocked" warning in all 30 cases on the fake verification page, but showed nothing in the spot-checked case without instructions. ClickFix Guard (samurayski) showed a warning banner, and StopFix a dialog with **Ignore** and **Clear clipboard** buttons; both were confirmed by screenshots of two cases each.
+- **Fake verification pages.** ClickFix First Aid stopped all 25 attacks, ClickFix Guard (samdem-ai) 24, ClickFix Warden 23 and ClickFix Mitigator 22. They missed different commands: ClickFix Guard (samdem-ai) missed H08 (a `cmd` line that assembles `pushd` and `rundll32` from variables to load a file from a WebDAV share), ClickFix Warden missed H06 and H08, and ClickFix Mitigator missed H02, H04 and H24 (two commands broken up with `^` characters, and a short `iex (irm …)` PowerShell command that downloads and runs a script). ClickFix First Aid stopped all of them because, on a page with trap instructions, it blocks any command that is copied (section 4.3).
+- **No instructions on the page.** ClickFix Mitigator stopped 22 of 25, ClickFix Guard (samdem-ai) 21, ClickFix First Aid 20 (12 blocked, 8 paused for confirmation) and ClickFix Warden 8. ClickFix First Aid missed H06, H08, H13, H18 and H19; ClickFix Guard (samdem-ai) missed H05, H07, H08 and H19; ClickFix Mitigator missed H02, H04 and H24. H08 and H19 were stopped only by ClickFix Mitigator.
+- **Clipboard write methods.** Only ClickFix First Aid stopped the attack with all five methods. ClickFix Guard (samdem-ai) and ClickFix Warden let it through when the page wrote it with `clipboardData.items.add` inside a copy event; ClickFix Mitigator let it through with `navigator.clipboard.write` and with `clipboardData.items.add`. StopFix stopped only the `document.execCommand('copy')` case.
+- **Ordinary commands.** ClickFix Mitigator blocked 7 of the 24 ordinary commands: all six installer one-liners and `oh-my-posh init pwsh | Invoke-Expression`. Its on-page notice has only a **Close** button and offers no way to copy the command anyway; allow and block lists are managed in the extension's own settings [24]. ClickFix First Aid paused the six installer one-liners and copied each with one click on **Copy anyway**. The other tools copied all 24 unchanged.
+- **ClickFix Mitigator settings.** Its setting "Block all JavaScript clipboard copying" is on by default [24], but ordinary commands were still copied, so blocking of every page copy did not take effect in this test. With the setting switched off, the extension does not load its page script, and none of the 50 attacks written with `navigator.clipboard.writeText` was stopped (second Mitigator row).
+- **Warn-only designs.** Three tools warn but leave the command on the clipboard, so a visitor who pastes anyway still runs it, and the harness counts the attack as delivered. ClickFix Guard (frameman) replaced the page with a full-screen "ClickFix scam blocked" warning in 23 of the 30 cases on fake verification pages, and did not replace any documentation page. ClickFix Guard (samurayski) showed a warning banner. StopFix showed a dialog in Spanish with **Ignorar** (ignore) and **Limpiar clipboard** (clear clipboard) buttons; the command stays on the clipboard unless the user clicks the second button. Screenshots of every tool on the same three cases are published with the results.
+- **Timing.** A first run clicked as soon as each page had loaded. Two tools behaved differently in that run: ClickFix Mitigator, which starts checking a moment after a page loads, stopped 17 and 1 of 25 attacks instead of 22 and 22, and ClickFix Guard (frameman) showed its warning in all 30 cases. The results above come from the final run, in which the harness waited one second before each click, as a person reading the page would. The results of the other tools were the same in both runs. Both runs are published.
 
 ### 7.3 Tools not tested
 
-- **ClickFix Block** (Eye Security) is the most widely installed of the tools found, but its source is not published and its store package could not be downloaded in the test environment. Its approach is described from the vendor's own technical write-up [13], which dates from October 2025; the current version may work differently. Based on that write-up, it intercepts `document.execCommand` copies, the method used by one of the five cases in the method test, and matches a short keyword list.
-- **ClickFix Mitigator** is distributed through the Firefox and Chrome stores without a source link on its listing, so it could not be loaded in the same way. Its Firefox listing requests broad permissions (clipboard read, downloads, extension management, tabs, all websites) and declares that it collects website activity and website content [16].
-- **BLANK** does not intercept clipboard writes as they happen; it scans a page when the user opens its popup [23]. The automated harness measures automatic interception, so it does not apply.
+- **ClickFix Block** (Eye Security) is the most widely installed of the tools found, but its code is not published and its store package could not be downloaded in the test environment, so it could not be loaded in the same harness. Its approach is described from the vendor's own technical write-up [13], which dates from October 2025; the current version may work differently. Based on that write-up, it intercepts `document.execCommand` copies, the method used by one of the five cases in the method test, and matches a short keyword list.
+- **BLANK** scans a page on demand from its popup, or after page load on sites the user enables, and does not intercept clipboard writes as they happen [23]. The automated harness measures automatic interception of clipboard writes, so it does not apply.
 
 ### 7.4 Fairness notes
 
 - The corpus was assembled by this project's author. It is built from other people's published reports and was not used for development, but other authors might choose different samples.
 - Tools differ in intent. Some are designed to warn and leave the clipboard alone; the harness measures only whether the attack text reached the clipboard, so a warn-only design scores low here even if its warning is clear. These cases are marked in the notes.
-- The tests ran with no internet access. Tools that download reputation feeds or rules (ClickFix Warden) ran with the rules bundled in their package only.
+- The tests ran with no internet access. Tools that download reputation feeds, rules or scoring settings (ClickFix Warden, ClickFix Mitigator) ran with what is bundled in their package only.
+- Every tool ran with its default settings. ClickFix Mitigator was also run with its "Block all JavaScript clipboard copying" setting switched off, to show how much of its protection depends on that setting.
+- The harness waits one second between a page loading and the click. Clicking at once disadvantaged one tool that starts checking a moment after the page loads (timing note in section 7.2).
 - Results reflect the tested versions on 6 November 2026. All of these projects are changing quickly.
 
 ## 8. Limitations and next steps
@@ -262,7 +267,7 @@ Every tool whose code is published and that intercepts clipboard writes automati
 **Known limitations of version 0.3.3**
 
 - **Browser-side protection is a contest.** A determined page may find new ways to reach the clipboard or to word its instructions. That is why the project also ships the Win+R switch and the PC check.
-- **Detection is pattern-based.** In this evaluation, five commands copied without trap instructions got through: H06 (curl download, tar extract and run, on three lines); H08 (cmd assembling pushd and rundll32 from variables); H13 (JackFix: XOR-decoded PowerShell); H18 (DNS variant: nslookup answer run by cmd); H19 (DNS variant: nslookup beacon with user name). On a page with ClickFix instructions all five were blocked.
+- **Detection is pattern-based.** In this evaluation, five commands copied without trap instructions got through: H06 (curl download, tar extract and run, on three lines); H08 (cmd assembling pushd and rundll32 from variables); H13 (JackFix: XOR-decoded PowerShell); H18 (DNS variant: nslookup answer run by hidden PowerShell); H19 (DNS variant: nslookup beacon with user name). On a page with ClickFix instructions all five were blocked.
 - **Typed commands are not seen.** A page that shows a command as an image and asks the visitor to type it is caught only by the instruction banner, and only if its wording is recognised.
 - **Installers are paused.** Copy buttons for genuine download-and-run installers need one extra click. This is deliberate and can be switched off per site with **Always allow**.
 - **The PC check is Windows-only.**
@@ -309,7 +314,7 @@ Kinds: **V** command shape as published, with indicators replaced by reserved na
 | H06 | curl download, tar extract and run, on three lines | Windows | V | [6] | Blocked | Delivered |
 | H07 | pcalua, PowerShell, caret-split pushd and rundll32 | Windows | V | [7] | Blocked | Blocked |
 | H08 | cmd assembling pushd and rundll32 from variables | Windows | V | [7] | Blocked | Delivered |
-| H09 | headless conhost, curl download, run | Windows | V+ | [8] | Blocked | Blocked |
+| H09 | headless conhost, curl download, run, fake "not a bot" remark | Windows | V | [8] | Blocked | Blocked |
 | H10 | FileFix: irm piped to iex, padded label | Windows | V | [8] | Blocked | Blocked |
 | H11 | TerminalFix: iwr piped to iex | Windows | V | [8] | Blocked | Paused |
 | H12 | TerminalFix (macOS): curl, chmod, bash | macOS | V | [8] | Blocked | Paused |
@@ -318,9 +323,9 @@ Kinds: **V** command shape as published, with indicators replaced by reserved na
 | H15 | InstallFix (macOS): base64 URL, curl piped to zsh | macOS | V | [8] | Blocked | Blocked |
 | H16 | InstallFix: mshta by full path | Windows | V | [8] | Blocked | Paused |
 | H17 | Windows Terminal variant: hidden encoded PowerShell | Windows | V | [8] | Blocked | Blocked |
-| H18 | DNS variant: nslookup answer run by cmd | Windows | V+ | [8] | Blocked | Delivered |
-| H19 | DNS variant: nslookup beacon with user name | Windows | V+ | [8] | Blocked | Delivered |
-| H20 | Downloads-folder orchestrator: move, extract, headless run | Windows | R | [5] | Blocked | Blocked |
+| H18 | DNS variant: nslookup answer run by hidden PowerShell | Windows | V | [8] | Blocked | Delivered |
+| H19 | DNS variant: nslookup beacon with user name | Windows | V | [8] | Blocked | Delivered |
+| H20 | Downloads-folder orchestrator: move, extract, headless run | Windows | V | [5] | Blocked | Blocked |
 | H21 | CrashFix: finger.exe copied, renamed and run | Windows | R | [10] | Blocked | Blocked |
 | H22 | macOS: fake verification echo, base64 to bash | macOS | R | [11] | Blocked | Blocked |
 | H23 | macOS: AppleScript fetched by curl, piped to osascript | macOS | R | [9] | Blocked | Paused |
@@ -368,16 +373,17 @@ node benchmark/run.mjs --ext extension --label "ClickFix First Aid" --out cfa.js
 node benchmark/run.mjs --ext /path/to/other-extension --label "Other tool" --out other.json
 ```
 
-Each run takes about eight minutes. Versions tested:
+Each run takes about ten minutes. Versions tested:
 
 | Tool | Repository | Commit tested | Notes |
 |---|---|---|---|
-| ClickFix First Aid 0.3.3 | this repository | `1189278` | Loaded unpacked from `extension/`, identical to the 0.3.3 release. |
+| ClickFix First Aid 0.3.3 | this repository | release tag `v0.3.3` | Loaded unpacked from `extension/`. The `extension/` and `rules/` folders on the commit tested (`695c3c4`) are identical to the v0.3.3 release. |
 | ClickFix Warden 0.1.1 | [github.com/xVoidByte/ClickFixWarden](https://github.com/xVoidByte/ClickFixWarden) | `3d5ddcb` | Built with `wxt build` from the repository; no internet access during the test, so its downloadable feeds were not loaded. |
 | ClickFix Guard (samdem-ai) 1.0.1 | [github.com/samdem-ai/clickfix-guard-extention](https://github.com/samdem-ai/clickfix-guard-extention) | `8f97295` | Loaded unpacked from the repository root. |
 | ClickFix Guard (frameman) 2.0.0 | [github.com/frameman/dec-clickfix-web-extension](https://github.com/frameman/dec-clickfix-web-extension) | `d74582a` | Loaded unpacked from `clickfix_extension/`. |
 | ClickFix Guard (samurayski) 0.4.4 | [github.com/samurayski/clickfix-guard](https://github.com/samurayski/clickfix-guard) | `6ca710a` | Loaded unpacked from the repository root, default policy. |
 | StopFix 1.0 | [github.com/naxonez/StopFix](https://github.com/naxonez/StopFix) | `92e0da4` | Loaded unpacked from the repository root. |
+| ClickFix Mitigator 0.4.10 | [github.com/j0rd1s3rr4n0/ClickFixMitigator](https://github.com/j0rd1s3rr4n0/ClickFixMitigator) | `ae0e514` | Loaded unpacked from `browser-extension/Chromium/`, default settings; no internet access, so its block lists and scoring settings were not downloaded. Run a second time with `--storage '{"blockAllClipboard":false}'`. |
 
 ## References
 
@@ -404,3 +410,4 @@ Each run takes about eight minutes. Versions tested:
 21. frameman. *dec-clickfix-web-extension* ("ClickFix Guard"). [GitHub](https://github.com/frameman/dec-clickfix-web-extension)
 22. samurayski. *clickfix-guard* ("ClickFix Guard"). [GitHub](https://github.com/samurayski/clickfix-guard)
 23. athx1337. *BLANK*. [GitHub](https://github.com/athx1337/blank-clickfix-detector)
+24. j0rd1s3rr4n0 (Jordi Serrano). *ClickFix Mitigator*, browser extension in `browser-extension/Chromium`, version 0.4.10, commit ae0e514. [GitHub](https://github.com/j0rd1s3rr4n0/ClickFixMitigator)

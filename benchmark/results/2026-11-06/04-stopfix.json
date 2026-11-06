@@ -7,8 +7,9 @@
    "commit": "92e0da4"
   },
   "browser": "141.0.7390.37",
-  "date": "2026-11-06T08:19:43.910Z",
-  "waitMs": 5000
+  "date": "2026-11-06T09:38:31.222Z",
+  "waitMs": 5000,
+  "thinkMs": 1000
  },
  "summary": {
   "attack-lure": {

@@ -4,11 +4,12 @@
   "extension": {
    "name": "ClickFix First Aid",
    "version": "0.3.3",
-   "commit": "1189278"
+   "commit": "695c3c4"
   },
   "browser": "141.0.7390.37",
-  "date": "2026-11-06T08:05:53.630Z",
-  "waitMs": 5000
+  "date": "2026-11-06T09:30:20.740Z",
+  "waitMs": 5000,
+  "thinkMs": 1000
  },
  "summary": {
   "attack-lure": {

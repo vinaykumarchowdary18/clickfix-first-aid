@@ -7,8 +7,9 @@
    "commit": "8f97295"
   },
   "browser": "141.0.7390.37",
-  "date": "2026-11-06T07:59:03.286Z",
-  "waitMs": 5000
+  "date": "2026-11-06T09:22:09.570Z",
+  "waitMs": 5000,
+  "thinkMs": 1000
  },
  "summary": {
   "attack-lure": {
@@ -18,9 +19,9 @@
    "total": 25
   },
   "attack-plain": {
-   "delivered": 5,
+   "delivered": 4,
    "prevented": 0,
-   "replaced": 20,
+   "replaced": 21,
    "total": 25
   },
   "method": {
@@ -415,9 +416,10 @@
    "group": "attack-plain",
    "id": "H18",
    "method": "writeText",
-   "outcome": "delivered",
+   "outcome": "replaced",
    "dialog": false,
-   "navigatedAway": false
+   "navigatedAway": false,
+   "clipboardStart": "# ClickFix Guard blocked a malicious command copied by docs-"
   },
   {
    "group": "attack-plain",

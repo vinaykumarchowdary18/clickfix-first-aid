@@ -7,8 +7,9 @@
    "commit": "d74582a"
   },
   "browser": "141.0.7390.37",
-  "date": "2026-11-06T08:06:10.058Z",
-  "waitMs": 5000
+  "date": "2026-11-06T09:30:35.477Z",
+  "waitMs": 5000,
+  "thinkMs": 1000
  },
  "summary": {
   "attack-lure": {
@@ -67,7 +68,7 @@
    "method": "writeText",
    "outcome": "delivered",
    "dialog": false,
-   "navigatedAway": true
+   "navigatedAway": false
   },
   {
    "group": "attack-lure",
@@ -75,7 +76,7 @@
    "method": "writeText",
    "outcome": "delivered",
    "dialog": false,
-   "navigatedAway": true
+   "navigatedAway": false
   },
   {
    "group": "attack-lure",
@@ -91,7 +92,7 @@
    "method": "writeText",
    "outcome": "delivered",
    "dialog": false,
-   "navigatedAway": true
+   "navigatedAway": false
   },
   {
    "group": "attack-lure",
@@ -99,7 +100,7 @@
    "method": "writeText",
    "outcome": "delivered",
    "dialog": false,
-   "navigatedAway": true
+   "navigatedAway": false
   },
   {
    "group": "attack-lure",
@@ -187,7 +188,7 @@
    "method": "writeText",
    "outcome": "delivered",
    "dialog": false,
-   "navigatedAway": true
+   "navigatedAway": false
   },
   {
    "group": "attack-lure",
@@ -203,7 +204,7 @@
    "method": "writeText",
    "outcome": "delivered",
    "dialog": false,
-   "navigatedAway": true
+   "navigatedAway": false
   },
   {
    "group": "attack-lure",
@@ -475,7 +476,7 @@
    "method": "itemsAdd",
    "outcome": "delivered",
    "dialog": false,
-   "navigatedAway": true
+   "navigatedAway": false
   },
   {
    "group": "benign",

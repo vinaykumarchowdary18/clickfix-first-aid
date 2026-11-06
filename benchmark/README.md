@@ -50,6 +50,6 @@ Options:
 | `--shots <dir>` | Save a screenshot of the page after the click for the cases in `--shot-cases` (default `attack-lure/H17,attack-plain/H17`). |
 | `--storage '<json>'` | Put these settings in the extension's `chrome.storage.local` before the first page opens, to test a mode other than the default. |
 
-A full run takes about eight minutes.
+A full run takes about ten minutes.
 
 To test another extension, point `--ext` at its unpacked folder (the one with `manifest.json`). Build it first if its repository needs a build step. The results for the tools in the report, with the exact commits tested and screenshots of each tool on the same three cases, are in [results/2026-11-06/](results/2026-11-06/).

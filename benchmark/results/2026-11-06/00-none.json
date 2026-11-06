@@ -3,8 +3,9 @@
   "label": "No extension (control)",
   "extension": null,
   "browser": "141.0.7390.37",
-  "date": "2026-11-06T07:59:00.709Z",
-  "waitMs": 5000
+  "date": "2026-11-06T09:38:33.601Z",
+  "waitMs": 5000,
+  "thinkMs": 1000
  },
  "summary": {
   "attack-lure": {

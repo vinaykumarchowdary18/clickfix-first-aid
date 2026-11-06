@@ -92,6 +92,8 @@ pre { font-family: 'Plex Mono', monospace; font-size: 8.4pt; background: #f4f6f9
 pre code { background: none; padding: 0; font-size: inherit; }
 h2 { font-size: 15pt; font-weight: 600; color: #0f2a4a; margin: 22pt 0 7pt; padding-bottom: 4pt; border-bottom: 1.5px solid #0f2a4a; break-after: avoid; }
 h3 { font-size: 11.2pt; font-weight: 600; color: #0f2a4a; margin: 14pt 0 5pt; break-after: avoid; }
+p:has(> strong:only-child) { break-after: avoid; }
+h3 + p, h2 + p { break-before: avoid; }
 p, li { orphans: 3; widows: 3; }
 p { margin: 0 0 7pt; }
 ul, ol { margin: 0 0 8pt; padding-left: 16pt; }

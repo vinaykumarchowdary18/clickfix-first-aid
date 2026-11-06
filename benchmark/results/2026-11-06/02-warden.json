@@ -2,13 +2,14 @@
  "meta": {
   "label": "ClickFix Warden",
   "extension": {
-   "name": "__MSG_extName__",
+   "name": "ClickFix Warden",
    "version": "0.1.1",
    "commit": "3d5ddcb"
   },
   "browser": "141.0.7390.37",
-  "date": "2026-11-06T08:12:50.940Z",
-  "waitMs": 5000
+  "date": "2026-11-06T09:30:23.280Z",
+  "waitMs": 5000,
+  "thinkMs": 1000
  },
  "summary": {
   "attack-lure": {
