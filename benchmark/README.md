@@ -25,7 +25,7 @@ Pages are generated in memory, served on the loopback interface only, and reache
 - **V+**: a published command whose truncated tail was completed for the benchmark.
 - **R**: reconstructed from a published description, because no full command was published.
 
-All attack samples are defanged. Hosts are reserved names (`example.invalid`) or documentation addresses (`203.0.113.0/24`), and encoded payloads decode to harmless text. Samples are stored base64-encoded because antivirus programs flag readable attack text.
+All attack samples are defanged. Hosts are reserved names (`example.invalid`) or documentation addresses (`203.0.113.0/24`), and encoded payloads decode to harmless text or to commands that point only at reserved addresses. Samples are stored base64-encoded because antivirus programs flag readable attack text.
 
 None of these samples was in this project's test suite when the benchmark was first run (6 November 2026), and the rules were not changed after seeing the results. Keep it that way: when a new rule is written for a missed sample, add a separate test sample for it rather than tuning against this file, so the benchmark keeps measuring commands the rules were not written for.
 
@@ -39,6 +39,16 @@ node benchmark/run.mjs --ext extension --label "ClickFix First Aid" --out cfa.js
 node benchmark/run.mjs --ext /path/to/unpacked-extension --label "Other" --out other.json
 ```
 
-Options: `--wait <ms>` (default 5000) and `--out <file>` for the full per-case results. A run takes about eight minutes.
+Options:
 
-To test another extension, point `--ext` at its unpacked folder (the one with `manifest.json`). Build it first if its repository needs a build step. The results for the tools in the report, with the exact commits tested, are in [results/2026-11-06/](results/2026-11-06/).
+| Option | Meaning |
+|---|---|
+| `--out <file>` | Write the full per-case results as JSON. |
+| `--wait <ms>` | How long to wait after each click (default 5000). |
+| `--only <group/id,...>` | Run only these cases, for example `attack-lure/H17,benign/B01`. |
+| `--shots <dir>` | Save a screenshot of the page after the click for the cases in `--shot-cases` (default `attack-lure/H17,attack-plain/H17`). |
+| `--storage '<json>'` | Put these settings in the extension's `chrome.storage.local` before the first page opens, to test a mode other than the default. |
+
+A full run takes about eight minutes.
+
+To test another extension, point `--ext` at its unpacked folder (the one with `manifest.json`). Build it first if its repository needs a build step. The results for the tools in the report, with the exact commits tested and screenshots of each tool on the same three cases, are in [results/2026-11-06/](results/2026-11-06/).

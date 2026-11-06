@@ -1,6 +1,6 @@
-# Independent reviews
+# External reviews (AI-produced)
 
-Outside reviews of ClickFix First Aid, kept here so anyone can see what was found and what was done about it. They were produced with Perplexity (several AI models) at the author's request. Every finding was checked before acting on it; [CHANGELOG.md](../CHANGELOG.md) says what was fixed, and why anything was not.
+External reviews of ClickFix First Aid, kept here so anyone can see what was found and what was done about it. They were produced with Perplexity (several AI models) at the author's request. Every finding was checked before acting on it; [CHANGELOG.md](../CHANGELOG.md) says what was fixed, and why anything was not.
 
 | File | Covers | What came of it |
 |---|---|---|

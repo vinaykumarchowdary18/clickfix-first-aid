@@ -1,4 +1,4 @@
-// Detector contract cases from the independent QA suite prepared with Perplexity
+// Detector contract cases from the external QA suite produced with Perplexity
 // (October 2026, "Five-area QA automation plan"), adapted to this engine's API.
 // The suite's original adapter run: 7 of 8 pass unmodified. The eighth expects
 // non-string input to throw; this engine converts it to a string instead, the

@@ -4,7 +4,13 @@
 //   node benchmark/run.mjs --label "ClickFix First Aid" --ext extension
 //   node benchmark/run.mjs --label "No extension" --none
 //
-// Options: --out results.json  --wait 5000 (ms to wait after each click)
+// Options: --out results.json   full per-case results
+//          --wait 5000          ms to wait after each click
+//          --only g/id,g/id     run only these cases (e.g. attack-lure/H17)
+//          --shots dir          save screenshots of the page after the click for
+//                               --shot-cases (default attack-lure/H17,attack-plain/H17)
+//          --storage '{...}'    settings to put in the extension's chrome.storage.local
+//                               before the first page opens (to test a non-default mode)
 //
 // The result of every case is what is on the clipboard afterwards:
 //   delivered  the exact text the page tried to copy
@@ -35,6 +41,10 @@ const label = opt('--label', 'unnamed');
 const extDir = args.includes('--none') ? null : resolve(opt('--ext', join(HERE, '..', 'extension')));
 const outFile = opt('--out', null);
 const WAIT = Number(opt('--wait', '5000'));
+const ONLY = opt('--only', null);
+const SHOTS = opt('--shots', null);
+const SHOT_CASES = (opt('--shot-cases', 'attack-lure/H17,attack-plain/H17')).split(',');
+const STORAGE = opt('--storage', null);
 
 const S = JSON.parse(await readFile(join(HERE, 'samples.json'), 'utf8'));
 const dec = (b) => Buffer.from(b, 'base64').toString('utf8');
@@ -124,6 +134,12 @@ if (extDir && !context.serviceWorkers().length) {
   await context.waitForEvent('serviceworker', { timeout: 15000 }).catch(() => {});
 }
 await new Promise((r) => setTimeout(r, 1500));
+if (extDir && STORAGE) {
+  const sw = context.serviceWorkers()[0];
+  if (!sw) throw new Error('--storage needs the extension to have a background service worker');
+  await sw.evaluate((o) => chrome.storage.local.set(o), JSON.parse(STORAGE));
+  await new Promise((r) => setTimeout(r, 500));
+}
 
 const reader = await context.newPage();
 await reader.goto(`http://reader.test:${port}/read`);
@@ -132,6 +148,7 @@ const getClip = async () => { await reader.bringToFront(); return reader.evaluat
 
 const results = [];
 for (const c of cases) {
+  if (ONLY && !ONLY.split(',').includes(`${c.group}/${c.id}`)) continue;
   const sentinel = `sentinel-${c.group}-${c.id}-${Date.now()}`;
   await setClip(sentinel);
   const page = await context.newPage();
@@ -145,6 +162,10 @@ for (const c of cases) {
   } catch (e) { error = String(e.message || e).split('\n')[0]; }
   await new Promise((r) => setTimeout(r, WAIT));
   const finalUrl = page.url();
+  if (SHOTS && SHOT_CASES.includes(`${c.group}/${c.id}`)) {
+    const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    await page.screenshot({ path: join(SHOTS, `${slug}-${c.group}-${c.id}.png`) }).catch(() => {});
+  }
   let clip;
   try { clip = await getClip(); } catch (e) { clip = null; error = error || 'clipboard read failed'; }
   const expected = dec(c.sample.b64);
@@ -157,7 +178,17 @@ for (const c of cases) {
 let meta = { label, extension: null };
 if (extDir) {
   const m = JSON.parse(await readFile(join(extDir, 'manifest.json'), 'utf8'));
-  meta.extension = { name: m.name, version: m.version };
+  let name = m.name;
+  const msg = /^__MSG_(\w+)__$/.exec(name || '');
+  if (msg) {
+    try {
+      const strings = JSON.parse(await readFile(join(extDir, '_locales', m.default_locale || 'en', 'messages.json'), 'utf8'));
+      const hit = Object.entries(strings).find(([k]) => k.toLowerCase() === msg[1].toLowerCase());
+      if (hit) name = hit[1].message;
+    } catch {}
+  }
+  meta.extension = { name, version: m.version };
+  if (STORAGE) meta.extension.storage = JSON.parse(STORAGE);
   try { meta.extension.commit = execFileSync('git', ['-C', extDir, 'rev-parse', '--short', 'HEAD'], { encoding: 'utf8' }).trim(); } catch {}
 }
 meta.browser = context.browser()?.version() || null;

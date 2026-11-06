@@ -33,7 +33,7 @@ Fixes found while testing v0.3.0 on a real Windows laptop and making the project
 
 ## v0.3.0 (25 October 2026)
 
-This release comes from a second round of independent review with Perplexity (an architecture and risk analysis, a QA plan with contract tests, and a security and integration review, all in [reviews/](reviews/)), plus problems found while checking that round. The round also delivered a complete rewrite of the extension. It was not adopted: run against this project's test samples, its engine missed 2 of the 26 attack shapes, blocked 10 of the 11 legitimate installer and one-liner samples (by design), and could be switched off by a page replacing `RegExp.prototype[Symbol.replace]`. Its good ideas were taken instead, and are credited below.
+This release comes from a second round of external review produced with AI models (Perplexity) (an architecture and risk analysis, a QA plan with contract tests, and a security and integration review, all in [reviews/](reviews/)), plus problems found while checking that round. The round also delivered a complete rewrite of the extension. It was not adopted: run against this project's test samples, its engine missed 2 of the 26 attack shapes, blocked 10 of the 11 legitimate installer and one-liner samples (by design), and could be switched off by a page replacing `RegExp.prototype[Symbol.replace]`. Its good ideas were taken instead, and are credited below.
 
 The fixes come with tests that fail on v0.2.0 and pass now. The one exception is the real-click check on the warning buttons, which no web page can reach to test, because the buttons sit in a closed shadow root.
 
@@ -74,7 +74,7 @@ The fixes come with tests that fail on v0.2.0 and pass now. The one exception is
 
 ## v0.2.0 (22 October 2026)
 
-This release answers an independent pre-release security review of v0.1.0, run with Perplexity. Every finding was first reproduced against v0.1.0 (the review's proof-of-concept pages are now part of the test suite, in `tests/fixtures/pages/review/`), then fixed with a test that failed before the fix. IDs refer to the review.
+This release answers an external pre-release security review of v0.1.0, produced with AI models (Perplexity). Every finding was first reproduced against v0.1.0 (the review's proof-of-concept pages are now part of the test suite, in `tests/fixtures/pages/review/`), then fixed with a test that failed before the fix. IDs refer to the review.
 
 ### Protection
 

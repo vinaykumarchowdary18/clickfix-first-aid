@@ -243,7 +243,7 @@ test('the public safe demo page triggers the block', async () => {
   await page.close();
 });
 
-// ---- Regression tests from the independent security review. -----------------
+// ---- Regression tests from the external security review. -------------------
 // clip: 'safe' = blocked text, 'held' = paused text, 'protected' = either, or 'before' = untouched
 // ui:   expected warning, or null for none
 const REVIEW = [

