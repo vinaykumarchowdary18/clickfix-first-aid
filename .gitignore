@@ -4,3 +4,4 @@ dist/
 Thumbs.db
 *.log
 tests/fixtures/pages/
+report/.build.html

