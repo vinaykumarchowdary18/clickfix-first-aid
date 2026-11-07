@@ -5,46 +5,91 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Safe ClickFix demo</title>
 <meta name="description" content="A harmless imitation of a ClickFix fake CAPTCHA page, to test ClickFix First Aid.">
+<meta name="theme-color" content="#12233a">
+<link rel="icon" href="icon-128.png">
 <style>
-  :root { --bg:#f1f5f9; --card:#ffffff; --fg:#0f172a; --muted:#475569; --line:#cbd5e1; --note:#dbeafe; --note-fg:#1e3a8a; color-scheme: light dark; }
-  @media (prefers-color-scheme: dark) { :root { --bg:#0b1220; --card:#111a2e; --fg:#e2e8f0; --muted:#94a3b8; --line:#334155; --note:#172554; --note-fg:#bfdbfe; } }
+  @font-face { font-family: "Public Sans"; src: url("assets/fonts/public-sans-latin-wght-normal.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+  @font-face { font-family: "Plex Mono"; src: url("assets/fonts/ibm-plex-mono-latin-400-normal.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+  :root {
+    --paper: #f3f6fa; --panel: #ffffff; --ink: #12233a; --ink-2: #2b3d55; --muted: #5a6b82; --rule: #d9e1ec; --rule-2: #e8edf4;
+    --info: #1f4f8f; --info-soft: #e5eefa; --allowed: #17734a; --allowed-soft: #e3f3ea;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #0c192b; --panel: #12233a; --ink: #e7eef7; --ink-2: #c8d4e3; --muted: #93a5bc; --rule: #22374f; --rule-2: #1a2d44;
+      --info: #9cc3f5; --info-soft: #132c4b; --allowed: #55c995; --allowed-soft: #10301f;
+      color-scheme: dark;
+    }
+  }
   * { box-sizing: border-box; }
-  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif; }
-  main { max-width: 640px; margin: 0 auto; padding: 24px 16px 48px; }
-  .safe { background: var(--note); color: var(--note-fg); border-radius: 12px; padding: 14px 16px; margin-bottom: 20px; }
-  .fake { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 24px; }
-  .fake h1 { font-size: 22px; margin: 0 0 6px; }
-  .fake p { color: var(--muted); margin: 0 0 16px; }
-  .captcha { display: flex; align-items: center; gap: 12px; border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; max-width: 320px; }
-  .captcha input { width: 26px; height: 26px; }
-  #steps { margin-top: 18px; display: none; border-top: 1px dashed var(--line); padding-top: 14px; }
-  #after { margin-top: 20px; display: none; }
-  code { font: 13px ui-monospace, Consolas, monospace; background: var(--bg); padding: 2px 6px; border-radius: 6px; word-break: break-all; }
-  a { color: inherit; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 17px/1.6 "Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; text-underline-offset: 3px; }
+  :focus-visible { outline: 3px solid var(--info); outline-offset: 3px; border-radius: 4px; }
+  .top { border-bottom: 1px solid var(--rule); }
+  .top .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 64px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 750; text-decoration: none; }
+  .brand img { width: 28px; height: 28px; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 16px; }
+  main { padding: 36px 0 64px; }
+  h1 { font-size: clamp(28px, 4vw, 38px); line-height: 1.1; letter-spacing: -.025em; margin: 0 0 10px; }
+  .intro { margin: 0 0 24px; color: var(--ink-2); font-size: 18px; }
+  .safe { background: var(--info-soft); color: var(--info); border-radius: 12px; padding: 14px 18px; margin: 0 0 24px; font-size: 16px; }
+  .safe strong { color: inherit; }
+  .window { background: var(--panel); border: 1px solid var(--rule); border-radius: 14px; overflow: hidden; box-shadow: 0 1px 2px rgba(18, 35, 58, .06), 0 12px 32px -12px rgba(18, 35, 58, .18); }
+  .chrome { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: var(--rule-2); border-bottom: 1px solid var(--rule); }
+  .dots { display: flex; gap: 6px; }
+  .dots i { width: 10px; height: 10px; border-radius: 50%; background: var(--rule); }
+  .addr { flex: 1; background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 4px 10px; font-size: 14px; color: var(--muted); }
+  .fake { padding: 32px 28px 36px; }
+  .fake h2 { font-size: 22px; margin: 0 0 6px; letter-spacing: -.01em; }
+  .fake p { color: var(--muted); margin: 0 0 20px; }
+  .captcha { display: flex; align-items: center; gap: 12px; border: 1px solid var(--rule); border-radius: 8px; padding: 14px 16px; max-width: 320px; background: var(--paper); cursor: pointer; font-size: 16px; }
+  .captcha input { width: 24px; height: 24px; margin: 0; }
+  #steps { margin-top: 20px; display: none; border-top: 1px dashed var(--rule); padding-top: 16px; }
+  #steps ol { margin: 8px 0 0; }
+  #after { margin-top: 24px; display: none; background: var(--panel); border: 1px solid var(--rule); border-radius: 14px; padding: 20px 22px; }
+  #after h2 { font-size: 19px; margin: 0 0 8px; }
+  #after p { margin: 0 0 10px; color: var(--ink-2); font-size: 16px; }
+  code { font: 13.5px/1.5 "Plex Mono", ui-monospace, Consolas, monospace; background: var(--rule-2); padding: 2px 6px; border-radius: 5px; word-break: break-all; }
+  #cmd { display: block; padding: 10px 12px; margin: 4px 0 14px; }
 </style>
 </head>
 <body>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="./"><img src="icon-128.png" alt="" width="28" height="28">ClickFix First Aid</a>
+    <a href="./">Back to the home page</a>
+  </div>
+</header>
 <main>
-  <div class="safe">
-    <strong>This is a safe demo.</strong> It copies the same kind of command a real ClickFix page would, but this one only prints a message (<code>echo</code>). It cannot harm your computer. Use it to check that ClickFix First Aid is working.
-  </div>
-
-  <div class="fake">
-    <h1>Checking if the site connection is secure</h1>
-    <p>example.com needs to review the security of your connection before proceeding.</p>
-    <label class="captcha"><input type="checkbox" id="robot"> I'm not a robot</label>
-    <div id="steps">
-      <strong>Verification steps</strong>
-      <ol id="steplist"></ol>
+  <div class="wrap">
+    <h1>Safe demo</h1>
+    <p class="intro">Check that the extension is working. Tick the box below the way a visitor to a trap page would.</p>
+    <div class="safe">
+      <strong>This is a safe demo.</strong> It copies the same kind of command a real ClickFix page would, but this one only prints a message (<code>echo</code>). It cannot harm your computer.
     </div>
-  </div>
 
-  <div id="after" class="safe">
-    <strong>What just happened:</strong> clicking the box silently put a command on your clipboard.
-    If ClickFix First Aid is installed, a red warning covers this page and your clipboard now holds a harmless "STOP" message instead.
-    If you see no warning, the extension is not installed or not enabled, and your clipboard holds this harmless test command:
-    <br><code id="cmd"></code>
-    <br><a href="./">Back to ClickFix First Aid</a>
+    <div class="window">
+      <div class="chrome" aria-hidden="true"><span class="dots"><i></i><i></i><i></i></span><span class="addr">example.com</span></div>
+      <div class="fake">
+        <h2>Checking if the site connection is secure</h2>
+        <p>example.com needs to review the security of your connection before proceeding.</p>
+        <label class="captcha"><input type="checkbox" id="robot"> I'm not a robot</label>
+        <div id="steps">
+          <strong>Verification steps</strong>
+          <ol id="steplist"></ol>
+        </div>
+      </div>
+    </div>
+
+    <div id="after">
+      <h2>What just happened</h2>
+      <p>Clicking the box silently put a command on your clipboard. If ClickFix First Aid is installed, a red warning covers this page and your clipboard now holds a harmless &ldquo;STOP&rdquo; message instead.</p>
+      <p>If you see no warning, the extension is not installed or not enabled, and your clipboard holds this harmless test command:</p>
+      <code id="cmd"></code>
+      <a href="./">Back to ClickFix First Aid</a>
+    </div>
   </div>
 </main>
 <script>

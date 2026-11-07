@@ -7,29 +7,30 @@
 <meta name="description" content="Step-by-step recovery plan after a ClickFix or fake CAPTCHA attack. From ClickFix First Aid, a free open-source project.">
 <style>
   :root {
-    --bg: #ffffff; --fg: #0f172a; --muted: #475569; --line: #e2e8f0; --card: #f8fafc;
-    --red: #b91c1c; --red-soft: #fee2e2; --amber-soft: #fef3c7; --amber: #92400e;
-    --green-soft: #dcfce7; --green: #166534; --link: #1d4ed8;
+    --bg: #f3f6fa; --fg: #12233a; --muted: #5a6b82; --line: #d9e1ec; --card: #ffffff;
+    --red: #c81e2c; --red-soft: #fdecee; --amber-soft: #fdf2df; --amber: #8a5200;
+    --green-soft: #e3f3ea; --green: #17734a; --link: #1f4f8f;
     color-scheme: light dark;
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #0b1220; --fg: #e2e8f0; --muted: #94a3b8; --line: #1e293b; --card: #111a2e;
-      --red: #f87171; --red-soft: #3b0d0d; --amber-soft: #3a2a06; --amber: #fcd34d;
-      --green-soft: #052e16; --green: #86efac; --link: #93c5fd;
+      --bg: #0c192b; --fg: #e7eef7; --muted: #93a5bc; --line: #22374f; --card: #12233a;
+      --red: #ff5c68; --red-soft: #3a1820; --amber-soft: #33260f; --amber: #f2b65a;
+      --green-soft: #10301f; --green: #55c995; --link: #9cc3f5;
     }
   }
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
   main { max-width: 760px; margin: 0 auto; padding: 32px 16px 64px; }
-  .eyebrow { display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--red); background: var(--red-soft); border-radius: 999px; padding: 4px 12px; }
-  h1 { font-size: clamp(26px, 5vw, 36px); line-height: 1.2; margin: 14px 0 10px; }
+  .brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 750; color: var(--fg); text-decoration: none; }
+  .brand svg { width: 28px; height: 28px; }
+  h1 { font-size: clamp(28px, 5vw, 40px); line-height: 1.12; letter-spacing: -.025em; margin: 22px 0 12px; }
   h2 { font-size: 21px; margin: 0 0 4px; }
   .lead { font-size: 18px; color: var(--muted); margin: 0 0 20px; }
   .note { border-radius: 12px; padding: 14px 16px; margin: 18px 0; }
   .why { background: var(--amber-soft); color: var(--amber); }
   .tip { background: var(--green-soft); color: var(--green); }
-  .step { border: 1px solid var(--line); border-radius: 16px; padding: 20px; margin: 18px 0; background: var(--card); }
+  .step { border: 1px solid var(--line); border-radius: 16px; padding: 22px; margin: 18px 0; background: var(--card); box-shadow: 0 1px 2px rgba(18, 35, 58, .05); }
   .step header { display: flex; gap: 14px; align-items: baseline; margin-bottom: 8px; }
   .num { flex: none; width: 34px; height: 34px; border-radius: 50%; background: var(--red); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; }
   @media (prefers-color-scheme: dark) { .num { color: #0b1220; } }
@@ -45,7 +46,7 @@
 </head>
 <body>
 <main>
-  <span class="eyebrow">ClickFix First Aid</span>
+  <a class="brand" href="{{HOMEPAGE}}"><svg viewBox="0 0 128 128" aria-hidden="true"><path d="M64 6 L112 24 V60 C112 92 91 113 64 122 C37 113 16 92 16 60 V24 Z" fill="#b91c1c"/><path d="M64 14 L104 29 V60 C104 87 87 105 64 113 C41 105 24 87 24 60 V29 Z" fill="#dc2626"/><rect x="53" y="36" width="22" height="58" rx="5" fill="#fff"/><rect x="35" y="54" width="58" height="22" rx="5" fill="#fff"/></svg>ClickFix First Aid</a>
   <h1>I ran a command from a website. What now?</h1>
   <p class="lead">Maybe a page said "verify you are human" and told you to press Win+R, paste and press Enter. Do these steps in order. The first hour matters most. You can tick the boxes as you go.</p>
 
