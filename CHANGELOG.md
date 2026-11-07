@@ -4,7 +4,7 @@
 
 Documentation and website. The extension's protection is unchanged; only the look of its bundled recovery guide changed.
 
-- **Website redesign**: a new home page with a before-and-after view of what you would paste, real screenshots of the extension, the benchmark results and a clearer privacy summary. The safe demo and the recovery guide use the same colours. Fonts (Public Sans, IBM Plex Mono) are served from the site itself, so the site makes no requests to other servers.
+- **Website redesign**: a new home page with a before-and-after view of what you would paste, real screenshots of the extension, our benchmark scores (the comparison with other extensions stays in the technical report) and a clearer privacy summary. The safe demo and the recovery guide use the same colours. Fonts (Public Sans, IBM Plex Mono) are served from the site itself, so the site makes no requests to other servers.
 - **Technical report** (`report/`): design, privacy model, a measured evaluation and a comparison with other anti-ClickFix extensions, as Markdown and PDF.
 - **Benchmark** (`benchmark/`): 25 defanged attack commands from public threat reports and 24 ordinary commands, replayed against any Chromium extension in a real browser. None of the samples was used to write the rules.
 - README statistics now cite Microsoft's report directly, and the ReliaQuest figure is worded as ReliaQuest states it.

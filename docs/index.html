@@ -176,35 +176,15 @@
   .board-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px 20px; padding: 18px 24px; border-bottom: 1px solid var(--rule); }
   .board-head h3 { margin: 0; font-size: 17px; }
   .board-head span { font-size: 14px; color: var(--muted); }
-  table.cmp { width: 100%; border-collapse: collapse; font-size: 15px; }
-  .cmp th, .cmp td { text-align: left; padding: 14px 24px; border-bottom: 1px solid var(--rule-2); vertical-align: middle; }
-  .cmp thead th { font-size: 13.5px; font-weight: 650; color: var(--muted); background: var(--rule-2); border-bottom: 1px solid var(--rule); }
-  .cmp tbody tr:last-child td, .cmp tbody tr:last-child th { border-bottom: 0; }
-  .cmp tbody th { font-weight: 650; width: 28%; }
-  .cmp tbody th small { display: block; font-weight: 400; font-size: 13px; color: var(--muted); }
-  .cmp tr.us th, .cmp tr.us td { background: color-mix(in srgb, var(--signal-soft) 55%, transparent); }
-  .cell { display: grid; grid-template-columns: 3.2em minmax(0, 1fr); align-items: center; gap: 10px; }
-  .cell b { font-weight: 700; font-variant-numeric: tabular-nums; }
-  .meter { height: 8px; border-radius: 4px; background: var(--rule-2); overflow: hidden; }
-  .meter i { display: block; height: 100%; border-radius: 4px; background: var(--bar); }
-  .us .meter i { background: var(--signal); }
-  .meter.ok i { background: color-mix(in srgb, var(--allowed) 70%, var(--bar)); }
-  .us .meter.ok i { background: var(--allowed); }
-  .cell em { grid-column: 2; font-style: normal; font-size: 13px; color: var(--muted); margin-top: -4px; white-space: nowrap; }
-  .flag { display: inline-block; margin-left: 6px; font-size: 12px; font-weight: 650; color: var(--paused); background: var(--paused-soft); border-radius: 999px; padding: 1px 8px; vertical-align: 1px; }
+  .compare { margin: 0; }
+  .compare > div { display: grid; grid-template-columns: 15em minmax(0, 1fr); gap: 20px; padding: 16px 24px; border-bottom: 1px solid var(--rule-2); }
+  .compare > div:last-child { border-bottom: 0; }
+  .compare dt { font-weight: 700; font-size: 15.5px; }
+  .compare dd { margin: 0; color: var(--ink-2); font-size: 15.5px; }
   .board-notes { padding: 18px 24px 22px; border-top: 1px solid var(--rule); font-size: 15px; color: var(--ink-2); display: grid; gap: 8px; }
   .board-notes p { margin: 0; }
   .board-links { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
-  @media (max-width: 820px) {
-    .cmp thead { display: none; }
-    .cmp, .cmp tbody, .cmp tr, .cmp th, .cmp td { display: block; width: 100%; }
-    .cmp tbody tr { border-bottom: 1px solid var(--rule); padding: 10px 0; }
-    .cmp tbody tr:last-child { border-bottom: 0; }
-    .cmp tbody th { width: 100%; padding: 8px 16px 4px; border: 0; }
-    .cmp td { padding: 6px 16px; border: 0; }
-    .cmp td::before { content: attr(data-label); display: block; font-size: 13px; color: var(--muted); margin-bottom: 2px; }
-    .board-head, .board-notes { padding-left: 16px; padding-right: 16px; }
-  }
+  @media (max-width: 640px) { .compare > div { grid-template-columns: 1fr; gap: 4px; padding: 14px 16px; } .board-head, .board-notes { padding-left: 16px; padding-right: 16px; } }
 
   /* Privacy spec sheet */
   .spec { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 56px; align-items: start; }
@@ -394,8 +374,8 @@
   <section class="block" id="results">
     <div class="wrap">
       <div class="head">
-        <h2>Tested against six other anti-ClickFix extensions</h2>
-        <p>25 attack commands from public threat reports published in 2025 and 2026, and 24 ordinary commands, replayed in Chromium against each extension with its default settings on 6 November 2026.</p>
+        <h2>Tested on 25 attack commands from threat reports</h2>
+        <p>Made safe but kept in the shape attackers used in 2025 and 2026, plus 24 ordinary commands, replayed in Chromium on 6 November 2026.</p>
       </div>
 
       <div class="kpis">
@@ -406,66 +386,15 @@
       </div>
 
       <div class="board">
-        <div class="board-head"><h3>Head-to-head results</h3><span>Higher is better in every column</span></div>
-        <table class="cmp">
-          <thead>
-            <tr><th scope="col">Extension</th><th scope="col">Attacks stopped, fake verification page</th><th scope="col">Attacks stopped, no instructions</th><th scope="col">Copy methods covered</th><th scope="col">Ordinary commands copied unchanged</th></tr>
-          </thead>
-          <tbody>
-            <tr class="us">
-              <th scope="row">ClickFix First Aid<small>0.3.3</small></th>
-              <td data-label="Attacks stopped, fake verification page"><div class="cell"><b>25/25</b><span class="meter"><i style="width:100%"></i></span></div></td>
-              <td data-label="Attacks stopped, no instructions"><div class="cell"><b>20/25</b><span class="meter"><i style="width:80%"></i></span><em>8 of them paused</em></div></td>
-              <td data-label="Copy methods covered"><div class="cell"><b>5/5</b><span class="meter"><i style="width:100%"></i></span></div></td>
-              <td data-label="Ordinary commands copied unchanged"><div class="cell"><b>18/24</b><span class="meter ok"><i style="width:75%"></i></span><em>6 installers paused</em></div></td>
-            </tr>
-            <tr>
-              <th scope="row">ClickFix Guard (samdem-ai)<small>1.0.1</small></th>
-              <td data-label="Attacks stopped, fake verification page"><div class="cell"><b>24/25</b><span class="meter"><i style="width:96%"></i></span></div></td>
-              <td data-label="Attacks stopped, no instructions"><div class="cell"><b>21/25</b><span class="meter"><i style="width:84%"></i></span></div></td>
-              <td data-label="Copy methods covered"><div class="cell"><b>4/5</b><span class="meter"><i style="width:80%"></i></span></div></td>
-              <td data-label="Ordinary commands copied unchanged"><div class="cell"><b>24/24</b><span class="meter ok"><i style="width:100%"></i></span></div></td>
-            </tr>
-            <tr>
-              <th scope="row">ClickFix Warden<small>0.1.1</small></th>
-              <td data-label="Attacks stopped, fake verification page"><div class="cell"><b>23/25</b><span class="meter"><i style="width:92%"></i></span></div></td>
-              <td data-label="Attacks stopped, no instructions"><div class="cell"><b>8/25</b><span class="meter"><i style="width:32%"></i></span></div></td>
-              <td data-label="Copy methods covered"><div class="cell"><b>4/5</b><span class="meter"><i style="width:80%"></i></span></div></td>
-              <td data-label="Ordinary commands copied unchanged"><div class="cell"><b>24/24</b><span class="meter ok"><i style="width:100%"></i></span></div></td>
-            </tr>
-            <tr>
-              <th scope="row">ClickFix Mitigator<small>0.4.10</small></th>
-              <td data-label="Attacks stopped, fake verification page"><div class="cell"><b>22/25</b><span class="meter"><i style="width:88%"></i></span></div></td>
-              <td data-label="Attacks stopped, no instructions"><div class="cell"><b>22/25</b><span class="meter"><i style="width:88%"></i></span></div></td>
-              <td data-label="Copy methods covered"><div class="cell"><b>3/5</b><span class="meter"><i style="width:60%"></i></span></div></td>
-              <td data-label="Ordinary commands copied unchanged"><div class="cell"><b>17/24</b><span class="meter ok"><i style="width:70.8%"></i></span><em>7 blocked</em></div></td>
-            </tr>
-            <tr>
-              <th scope="row">ClickFix Guard (frameman)<small>2.0.0 <span class="flag">Warns only</span></small></th>
-              <td data-label="Attacks stopped, fake verification page"><div class="cell"><b>0/25</b><span class="meter"><i style="width:0"></i></span></div></td>
-              <td data-label="Attacks stopped, no instructions"><div class="cell"><b>0/25</b><span class="meter"><i style="width:0"></i></span></div></td>
-              <td data-label="Copy methods covered"><div class="cell"><b>0/5</b><span class="meter"><i style="width:0"></i></span></div></td>
-              <td data-label="Ordinary commands copied unchanged"><div class="cell"><b>24/24</b><span class="meter ok"><i style="width:100%"></i></span></div></td>
-            </tr>
-            <tr>
-              <th scope="row">ClickFix Guard (samurayski)<small>0.4.4 <span class="flag">Warns only</span></small></th>
-              <td data-label="Attacks stopped, fake verification page"><div class="cell"><b>0/25</b><span class="meter"><i style="width:0"></i></span></div></td>
-              <td data-label="Attacks stopped, no instructions"><div class="cell"><b>0/25</b><span class="meter"><i style="width:0"></i></span></div></td>
-              <td data-label="Copy methods covered"><div class="cell"><b>0/5</b><span class="meter"><i style="width:0"></i></span></div></td>
-              <td data-label="Ordinary commands copied unchanged"><div class="cell"><b>24/24</b><span class="meter ok"><i style="width:100%"></i></span></div></td>
-            </tr>
-            <tr>
-              <th scope="row">StopFix<small>1.0 <span class="flag">Warns only</span></small></th>
-              <td data-label="Attacks stopped, fake verification page"><div class="cell"><b>0/25</b><span class="meter"><i style="width:0"></i></span></div></td>
-              <td data-label="Attacks stopped, no instructions"><div class="cell"><b>0/25</b><span class="meter"><i style="width:0"></i></span></div></td>
-              <td data-label="Copy methods covered"><div class="cell"><b>1/5</b><span class="meter"><i style="width:20%"></i></span></div></td>
-              <td data-label="Ordinary commands copied unchanged"><div class="cell"><b>24/24</b><span class="meter ok"><i style="width:100%"></i></span></div></td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="board-head"><h3>Compared with six other anti-ClickFix extensions</h3><span>Each with its default settings, same test</span></div>
+        <dl class="compare">
+          <div><dt>Fake verification pages</dt><dd>ClickFix First Aid was the only one to stop all 25 attacks.</dd></div>
+          <div><dt>Ways a page can copy</dt><dd>The only one to cover all five.</dd></div>
+          <div><dt>No instructions on the page</dt><dd>Two extensions stopped more than we did, 22 and 21 of 25. Rules for the five commands we missed are planned for the next version.</dd></div>
+          <div><dt>Warnings only</dt><dd>Three of the six show a warning but leave the attack command on the clipboard, so a visitor who pastes anyway still runs it.</dd></div>
+        </dl>
         <div class="board-notes">
-          <p>&ldquo;Stopped&rdquo; means the attack never reached the clipboard. Extensions marked &ldquo;Warns only&rdquo; show a warning but leave the command on the clipboard, so a visitor who pastes anyway still runs it. For ClickFix First Aid, 12 of the 20 commands on pages without instructions were blocked and 8 were paused until the user confirmed.</p>
-          <p>Where others did better: on pages with no instructions, ClickFix Mitigator stopped 22 and ClickFix Guard (samdem-ai) 21. Rules for the five commands we missed are planned for the next version.</p>
+          <p>&ldquo;Stopped&rdquo; means the attack never reached the clipboard. For ClickFix First Aid, 12 of the 20 commands on pages without instructions were blocked and 8 were paused until the user confirmed. The technical report describes the method and every tool tested.</p>
         </div>
       </div>
       <div class="board-links">
